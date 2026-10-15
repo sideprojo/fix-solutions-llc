@@ -11,34 +11,56 @@ interface SessionData {
   timestamp: string;
 }
 
-const INTERNAL_PORTAL_BASE = 'http://localhost:8090';
+const HOSTED_INTERNAL_BASE = 'https://sideprojo.github.io/milton-group-concepts-site';
+const LOCAL_INTERNAL_BASE = 'http://localhost:8090';
+
+const getInternalBase = () => {
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return LOCAL_INTERNAL_BASE;
+  }
+  return HOSTED_INTERNAL_BASE;
+};
 
 const INTERNAL_PORTALS = [
   {
     title: 'MGC & F.I.X Internal Data Commerce Hub',
     subtitle: 'SAS ModelOps • CIPP/US & CIPP/G • VA SDVOSB Command',
-    url: `${INTERNAL_PORTAL_BASE}/index.html`,
+    page: 'index.html',
     badge: 'VIEWER_ONBOARDED',
     icon: Layers
   },
   {
+    title: 'Defense-in-Depth & Compliance Center',
+    subtitle: 'CMMC 2.0 L2 • NIST 800-171 • CIPP/US • Trust-But-Verify Audit',
+    page: 'compliance-trust-center.html',
+    badge: 'TRUST BUT VERIFY',
+    icon: ShieldCheck
+  },
+  {
+    title: 'Enterprise Integrations & Connections Hub',
+    subtitle: 'GCP • Azure Sentinel • SAM.gov • Mercury • LangGraph Mesh',
+    page: 'integrations-connections-hub.html',
+    badge: '20+ CONNECTORS',
+    icon: Lock
+  },
+  {
     title: 'Visual Cloud Agent & LangGraph Studio',
     subtitle: 'Google Vertex AI + Azure AI Foundry + LangChain Supervisor Graph',
-    url: `${INTERNAL_PORTAL_BASE}/agent-workflow-studio.html`,
+    page: 'agent-workflow-studio.html',
     badge: 'LIVE TELEMETRY',
     icon: Cpu
   },
   {
     title: '3D Geospatial & Google Earth Command',
     subtitle: 'Zero-Seat-Cost CesiumJS + GeoJSON Defense & Logistics Corridors',
-    url: `${INTERNAL_PORTAL_BASE}/earth-3d.html`,
+    page: 'earth-3d.html',
     badge: 'ZERO-CHARGE GUARD',
     icon: Globe
   },
   {
     title: '360° WebXR VR Command Deck',
     subtitle: 'Spatial Computing & Multi-Screen Operations Environment',
-    url: `${INTERNAL_PORTAL_BASE}/vr-command.html`,
+    page: 'vr-command.html',
     badge: 'WEBXR READY',
     icon: Sparkles
   }
@@ -346,28 +368,29 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {INTERNAL_PORTALS.map((portal, i) => {
                       const Icon = portal.icon;
+                      const targetUrl = `${getInternalBase()}/${portal.page}?mgc_verify=1&role=${encodeURIComponent(session.role)}&name=${encodeURIComponent(session.name)}`;
                       return (
                         <a
                           key={i}
-                          href={portal.url}
+                          href={targetUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="group p-4 rounded-lg bg-tacticalSlate/40 hover:bg-tacticalSlate/80 border border-glassBorder hover:border-vanguardGold/60 transition-all flex flex-col justify-between"
+                          className="group p-3.5 rounded-lg bg-tacticalSlate/40 hover:bg-tacticalSlate/80 border border-glassBorder hover:border-vanguardGold/60 transition-all flex flex-col justify-between"
                         >
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="w-9 h-9 rounded-md bg-vanguardGold/15 text-vanguardGold flex items-center justify-center group-hover:bg-vanguardGold group-hover:text-missionNavy transition-colors">
-                              <Icon className="w-5 h-5" />
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <div className="w-8 h-8 rounded-md bg-vanguardGold/15 text-vanguardGold flex items-center justify-center group-hover:bg-vanguardGold group-hover:text-missionNavy transition-colors">
+                              <Icon className="w-4 h-4" />
                             </div>
                             <span className="text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-missionNavy/80 border border-vanguardGold/30 text-vanguardGold">
                               {portal.badge}
                             </span>
                           </div>
                           <div>
-                            <h4 className="text-sm font-bold text-white group-hover:text-vanguardGold flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-white group-hover:text-vanguardGold flex items-center justify-between">
                               {portal.title}
                               <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
                             </h4>
-                            <p className="text-[11px] text-gray-200 mt-1">
+                            <p className="text-[10px] text-gray-200 mt-0.5">
                               {portal.subtitle}
                             </p>
                           </div>
