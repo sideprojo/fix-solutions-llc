@@ -116,7 +116,7 @@ const FALLBACK_LIVE_ITEMS: LiveNewsItem[] = [
     time: 'LIVE • TODAY',
     pubTimestamp: Date.now() - 1800 * 1000,
     agency: 'U.S. Army / DoD',
-    track: '541519 • SW / CLOUD',
+    track: 'NAICS 541519',
     status: 'KEY BRIEFING',
     url: 'https://federalnewsnetwork.com/',
     isKeyStory: true,
@@ -131,7 +131,7 @@ const FALLBACK_LIVE_ITEMS: LiveNewsItem[] = [
     time: 'LIVE • TODAY',
     pubTimestamp: Date.now() - 3600 * 1000,
     agency: 'DHS / CISA',
-    track: '541512 • ZERO TRUST',
+    track: 'NAICS 541512',
     status: 'CYBER ALERT',
     url: 'https://www.cisa.gov/cybersecurity-advisories/all.xml',
     isKeyStory: true,
@@ -146,7 +146,7 @@ const FALLBACK_LIVE_ITEMS: LiveNewsItem[] = [
     time: 'LIVE • 2h ago',
     pubTimestamp: Date.now() - 7200 * 1000,
     agency: 'DoD / Space Ops',
-    track: '334220 • SATCOM',
+    track: 'NAICS 334220',
     status: 'ACQUISITION',
     url: 'https://defensescoop.com/',
     isKeyStory: false,
@@ -161,7 +161,7 @@ const FALLBACK_LIVE_ITEMS: LiveNewsItem[] = [
     time: 'LIVE • 3h ago',
     pubTimestamp: Date.now() - 10800 * 1000,
     agency: 'OMB / GSA',
-    track: '541519 • AI / IT VAR',
+    track: 'NAICS 541519',
     status: 'MODERNIZATION',
     url: 'https://www.nextgov.com/',
     isKeyStory: true,
@@ -176,7 +176,7 @@ const FALLBACK_LIVE_ITEMS: LiveNewsItem[] = [
     time: 'LIVE • 4h ago',
     pubTimestamp: Date.now() - 14400 * 1000,
     agency: 'Pentagon / DLA',
-    track: '334111 • CMMC L2',
+    track: 'NAICS 334111',
     status: 'POLICY',
     url: 'https://breakingdefense.com/',
     isKeyStory: false,
@@ -211,25 +211,25 @@ const inferProcurementMetadata = (title: string, sourceCode: string) => {
   let agency = 'Federal / DoD';
   if (t.includes('army') || t.includes('ausa')) agency = 'U.S. Army';
   else if (t.includes('navy') || t.includes('marine')) agency = 'U.S. Navy';
-  else if (t.includes('air force') || t.includes('space')) agency = 'USAF / Space Force';
+  else if (t.includes('air force') || t.includes('space')) agency = 'USAF / Space';
   else if (t.includes('cisa') || t.includes('vulnerabilit') || t.includes('cyber')) agency = 'DHS / CISA';
   else if (t.includes('va ') || t.includes('veteran')) agency = 'Dept. of VA';
   else if (t.includes('gsa') || t.includes('opm') || t.includes('workforce')) agency = 'GSA / OPM';
   else if (t.includes('pentagon') || t.includes('dod') || t.includes('hegseth') || t.includes('defense')) agency = 'Pentagon / DoD';
 
-  let track = '541519 • IT VAR';
+  let track = 'NAICS 541519';
   let status = 'INTEL BRIEF';
   if (t.includes('cyber') || t.includes('vulnerabilit') || t.includes('zero trust') || sourceCode === 'CISA') {
-    track = '541512 • CYBER';
+    track = 'NAICS 541512';
     status = 'CYBER ALERT';
   } else if (t.includes('ai') || t.includes('software') || t.includes('cloud') || t.includes('data')) {
-    track = '541519 • AI / CLOUD';
-    status = 'TECH OPS';
+    track = 'NAICS 541519';
+    status = 'AI / CLOUD';
   } else if (t.includes('contract') || t.includes('award') || t.includes('rfp') || t.includes('procurement') || t.includes('budget')) {
-    track = '334111 • ACQUISITION';
+    track = 'NAICS 334111';
     status = 'PROCUREMENT';
   } else if (t.includes('space') || t.includes('autonom') || t.includes('drone') || t.includes('weapon')) {
-    track = '334220 • DEFENSE';
+    track = 'NAICS 334220';
     status = 'TACTICAL';
   }
 
@@ -278,7 +278,7 @@ const ProcurementNews = () => {
               sourceCode: feed.code,
               accentColor: feed.accent,
               title: cleanTitle,
-              summary: cleanSummary.slice(0, 130),
+              summary: cleanSummary.slice(0, 140),
               time: formatRelativeTime(entry.pubDate || ''),
               pubTimestamp,
               agency: meta.agency,
@@ -432,12 +432,12 @@ const ProcurementNews = () => {
                   : hoveredCard.item.accentColor,
               }}
             />
-            <div className="flex flex-col h-full w-full skew-x-6 p-4 justify-between">
+            <div className="flex flex-col h-full w-full skew-x-6 px-5 py-4 justify-between">
               {/* Top NBA-RSS Scoreboard Strip */}
               <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
                 <div className="flex items-center gap-2 min-w-0">
                   <span
-                    className="px-2 py-0.5 rounded text-[10px] font-mono font-extrabold uppercase tracking-wider text-missionNavy shrink-0"
+                    className="px-2 py-0.5 rounded text-[9px] font-mono font-extrabold uppercase tracking-wider text-missionNavy shrink-0"
                     style={{ backgroundColor: hoveredCard.item.accentColor }}
                   >
                     {hoveredCard.item.sourceCode}
@@ -457,29 +457,26 @@ const ProcurementNews = () => {
                 )}
               </div>
 
-              {/* Headline & Summary */}
-              <div className="my-auto py-1.5">
-                <h4 className="text-sm font-serif font-bold text-vanguardGold leading-snug line-clamp-2 mb-1">
+              {/* Centered Headline & Summary */}
+              <div className="flex flex-col items-center justify-center text-center flex-grow px-1">
+                <h4 className="text-[14.5px] font-sans font-bold text-vanguardGold leading-[1.32] tracking-[-0.01em] line-clamp-3 text-balance drop-shadow-sm">
                   {hoveredCard.item.title}
                 </h4>
-                <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
-                  {hoveredCard.item.summary}
-                </p>
               </div>
 
               {/* Bottom 3-Column Box Score Strip */}
-              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/15 text-[10px] font-mono">
-                <div className="truncate">
-                  <span className="block text-[8px] uppercase text-slate-400">AGENCY</span>
+              <div className="grid grid-cols-3 items-center gap-1 pt-2.5 border-t border-white/15 text-[10px] font-mono">
+                <div className="text-left truncate">
+                  <span className="block text-[8px] uppercase text-slate-400 tracking-wider">AGENCY</span>
                   <span className="text-white font-semibold truncate">{hoveredCard.item.agency}</span>
                 </div>
-                <div className="truncate">
-                  <span className="block text-[8px] uppercase text-slate-400">TRACK</span>
+                <div className="text-center truncate">
+                  <span className="block text-[8px] uppercase text-slate-400 tracking-wider">TRACK</span>
                   <span className="text-vanguardGold font-bold truncate">{hoveredCard.item.track}</span>
                 </div>
                 <div className="text-right truncate">
-                  <span className="block text-[8px] uppercase text-slate-400">ACTION</span>
-                  <span className="text-emerald-400 font-bold">OPEN RSS ↗</span>
+                  <span className="block text-[8px] uppercase text-slate-400 tracking-wider">ACTION</span>
+                  <span className="text-emerald-400 font-bold">READ ↗</span>
                 </div>
               </div>
             </div>
@@ -538,7 +535,7 @@ const ProcurementNews = () => {
                 setHoveredCard({ item, index: i, rect });
               }}
               style={{ opacity: hoveredCard?.index === i ? 0 : 1 }}
-              className={`flex flex-col rounded-tl-2xl rounded-br-2xl rounded-tr-sm rounded-bl-sm overflow-hidden transition-all duration-500 ease-in-out group w-[275px] md:w-[305px] h-[195px] shrink-0 backdrop-blur-md -skew-x-6 relative ${
+              className={`flex flex-col rounded-tl-2xl rounded-br-2xl rounded-tr-sm rounded-bl-sm overflow-hidden transition-all duration-500 ease-in-out group w-[285px] md:w-[315px] h-[195px] shrink-0 backdrop-blur-md -skew-x-6 relative ${
                 item.isKeyStory
                   ? 'bg-gradient-to-br from-[#13203B]/95 via-missionNavy/95 to-[#1E1B10]/90 border border-vanguardGold/75 shadow-[0_10px_28px_rgba(197,179,88,0.18)]'
                   : 'bg-gradient-to-br from-tacticalSlate/90 via-tacticalSlate/65 to-missionNavy/95 border-l border-t border-white/15 border-r border-b border-black/80 shadow-[10px_0_18px_-5px_rgba(0,0,0,0.65)]'
@@ -554,7 +551,7 @@ const ProcurementNews = () => {
                 }}
               />
 
-              <div className="flex flex-col h-full w-full skew-x-6 p-4 justify-between relative z-20">
+              <div className="flex flex-col h-full w-full skew-x-6 px-5 py-4 justify-between relative z-20">
                 {/* Row 1: Feed Ticker Tag & Pinned/Time Status */}
                 <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
                   <div className="flex items-center gap-2 min-w-0">
@@ -564,7 +561,7 @@ const ProcurementNews = () => {
                     >
                       {item.sourceCode}
                     </span>
-                    <span className="text-[10px] font-mono text-gray-300 truncate">
+                    <span className="text-[10px] font-mono text-slate-300 truncate">
                       {item.source}
                     </span>
                   </div>
@@ -579,33 +576,32 @@ const ProcurementNews = () => {
                   )}
                 </div>
 
-                {/* Row 2: Compact Story Headline & 1-Line Snippet */}
-                <div className="my-auto py-1">
+                {/* Row 2: Centered, Balanced Story Headline */}
+                <div className="flex flex-col items-center justify-center text-center flex-grow px-1">
                   <h4
-                    className={`text-[14px] font-serif font-semibold leading-snug line-clamp-2 mb-1 transition-colors ${
-                      item.isKeyStory ? 'text-vanguardGold' : 'text-white group-hover:text-vanguardGold'
+                    className={`text-[14px] md:text-[14.5px] font-sans font-semibold leading-[1.34] tracking-[-0.01em] line-clamp-3 text-balance transition-colors drop-shadow-sm ${
+                      item.isKeyStory
+                        ? 'text-vanguardGold font-bold'
+                        : 'text-slate-50 group-hover:text-vanguardGold'
                     }`}
                   >
                     {item.title}
                   </h4>
-                  <p className="text-[10px] text-gray-400 line-clamp-1 font-mono">
-                    {item.summary}
-                  </p>
                 </div>
 
                 {/* Row 3: NBA-Ticker Style 3-Column Box Score Strip */}
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-glassBorder/40 text-[10px] font-mono">
-                  <div className="truncate">
-                    <span className="block text-[8px] uppercase text-gray-400 tracking-wider">AGENCY</span>
-                    <span className="text-gray-200 font-medium truncate">{item.agency}</span>
+                <div className="grid grid-cols-3 items-center gap-1 pt-2.5 border-t border-glassBorder/40 text-[10px] font-mono">
+                  <div className="text-left truncate">
+                    <span className="block text-[8px] uppercase text-slate-400 tracking-wider">AGENCY</span>
+                    <span className="text-slate-100 font-semibold truncate">{item.agency}</span>
                   </div>
-                  <div className="truncate">
-                    <span className="block text-[8px] uppercase text-gray-400 tracking-wider">TRACK</span>
+                  <div className="text-center truncate">
+                    <span className="block text-[8px] uppercase text-slate-400 tracking-wider">TRACK</span>
                     <span className="text-vanguardGold font-bold truncate">{item.track}</span>
                   </div>
                   <div className="text-right truncate">
-                    <span className="block text-[8px] uppercase text-gray-400 tracking-wider">STATUS</span>
-                    <span className={item.isKeyStory ? 'text-vanguardGold font-bold' : 'text-gray-200'}>
+                    <span className="block text-[8px] uppercase text-slate-400 tracking-wider">STATUS</span>
+                    <span className={item.isKeyStory ? 'text-vanguardGold font-bold' : 'text-slate-200 font-medium'}>
                       {item.isKeyStory ? 'PINNED' : item.status}
                     </span>
                   </div>
