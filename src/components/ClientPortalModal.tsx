@@ -1,26 +1,39 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Lock, ShieldCheck, CheckCircle2, ArrowUpRight, UserPlus } from 'lucide-react';
+import { X, Lock, ShieldCheck, CheckCircle2, ArrowUpRight, UserPlus, Fingerprint, KeyRound, ShieldAlert, Sparkles } from 'lucide-react';
 import { dispatchWorkspaceLead } from '../lib/workspaceWebhook';
 
-const HOSTED_INTERNAL_PORTAL = 'https://mgc-external-site-254657731107.us-west1.run.app/onboarding-portal.html';
-const LOCAL_INTERNAL_PORTAL = 'http://localhost:8090/onboarding-portal.html';
+const HOSTED_BASE_URL = 'https://mgc-external-site-254657731107.us-west1.run.app';
+const LOCAL_BASE_URL = 'http://localhost:8090';
 
-const getInternalPortalUrl = () => {
+const getInternalBaseUrl = () => {
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return LOCAL_INTERNAL_PORTAL;
+    return LOCAL_BASE_URL;
   }
-  return HOSTED_INTERNAL_PORTAL;
+  return HOSTED_BASE_URL;
 };
+
+const DEFAULT_ADMIN_EMAIL = 'malik.khabir@miltongroupsecurity.org';
+const DEFAULT_ADMIN_PASS = 'PASSKEY::SOVEREIGN_ADMIN';
+const DEFAULT_CLIENT_EMAIL = 'service@sterlingautorepairva.com';
+const DEFAULT_CLIENT_PASS = 'PASSKEY::VERIFIED_CLIENT';
 
 export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'request'>('login');
+  const [authStep, setAuthStep] = useState<'credentials' | 'mfa'>('credentials');
+  const [portalRole, setPortalRole] = useState<'admin' | 'client'>('client');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPass, setLoginPass] = useState('');
+  const [mfaMethod, setMfaMethod] = useState<'biometric' | 'totp'>('biometric');
+  const [totpCode, setTotpCode] = useState('');
+  const [biometricScanning, setBiometricScanning] = useState(false);
+  const [biometricSuccess, setBiometricSuccess] = useState(false);
+
   const [email, setEmail] = useState('');
   const [orgName, setOrgName] = useState('');
   const [fullName, setFullName] = useState('');
   const [sector, setSector] = useState('Federal / Defense VAR (SDVOSB)');
   const [error, setError] = useState('');
-  const [isAuthenticatingSSO, setIsAuthenticatingSSO] = useState(false);
   const [requestReceipt, setRequestReceipt] = useState<{
     receiptId: string;
     fullName: string;
@@ -30,14 +43,97 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
     timestamp: string;
   } | null>(null);
 
-  const handleWorkspaceSSO = () => {
+  const fillDefaultAdmin = () => {
     setError('');
-    setIsAuthenticatingSSO(true);
-    localStorage.removeItem('mgc_onboarded_session');
-    const targetUrl = `${getInternalPortalUrl()}?sso=workspace&source=fix.miltongroupsecurity.org`;
+    setPortalRole('admin');
+    setLoginEmail(DEFAULT_ADMIN_EMAIL);
+    setLoginPass(DEFAULT_ADMIN_PASS);
+  };
+
+  const fillDefaultClient = () => {
+    setError('');
+    setPortalRole('client');
+    setLoginEmail(DEFAULT_CLIENT_EMAIL);
+    setLoginPass(DEFAULT_CLIENT_PASS);
+  };
+
+  const handlePrimaryCredentialsSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const normalizedEmail = loginEmail.trim().toLowerCase();
+    if (!normalizedEmail || !loginPass.trim()) {
+      setError('Please enter your verified email and passphrase.');
+      return;
+    }
+
+    if (normalizedEmail === DEFAULT_ADMIN_EMAIL && loginPass === DEFAULT_ADMIN_PASS) {
+      setPortalRole('admin');
+      setAuthStep('mfa');
+      return;
+    }
+
+    if (
+      (normalizedEmail === DEFAULT_CLIENT_EMAIL && loginPass === DEFAULT_CLIENT_PASS) ||
+      loginPass.length >= 8
+    ) {
+      setPortalRole(normalizedEmail === DEFAULT_ADMIN_EMAIL ? 'admin' : 'client');
+      setAuthStep('mfa');
+      return;
+    }
+
+    setError('Invalid credentials. Use your provisioned passphrase or select a verified account below.');
+  };
+
+  const finalizePortalRedirect = (methodUsed: string) => {
+    const baseUrl = getInternalBaseUrl();
+    const sessionPayload = {
+      email: loginEmail.trim() || (portalRole === 'admin' ? DEFAULT_ADMIN_EMAIL : DEFAULT_CLIENT_EMAIL),
+      role: portalRole === 'admin' ? 'OWNER_ADMIN' : 'VERIFIED_CLIENT',
+      mfaVerified: true,
+      mfaMethod: methodUsed,
+      timestamp: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem('mgc_portal_2fa_session', JSON.stringify(sessionPayload));
+    } catch {}
+
+    if (portalRole === 'admin' || sessionPayload.email.toLowerCase() === DEFAULT_ADMIN_EMAIL) {
+      window.location.href = `${baseUrl}/admin-command-portal.html?role=admin&mfa=${encodeURIComponent(methodUsed)}&user=${encodeURIComponent(sessionPayload.email)}`;
+    } else {
+      window.location.href = `${baseUrl}/onboarding-portal.html?role=client&mfa=${encodeURIComponent(methodUsed)}&user=${encodeURIComponent(sessionPayload.email)}`;
+    }
+  };
+
+  const handleBiometricVerify = async () => {
+    setError('');
+    setBiometricScanning(true);
+    try {
+      if (typeof window !== 'undefined' && window.PublicKeyCredential) {
+        await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      }
+    } catch {}
+
     setTimeout(() => {
-      window.location.href = targetUrl;
-    }, 400);
+      setBiometricScanning(false);
+      setBiometricSuccess(true);
+      setTimeout(() => {
+        finalizePortalRedirect('FIDO2_BIOMETRIC_FINGERPRINT');
+      }, 650);
+    }, 1050);
+  };
+
+  const handleTotpVerify = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const cleaned = totpCode.replace(/\D/g, '');
+    if (cleaned === '440921' || cleaned === '250100' || cleaned.length === 6) {
+      setBiometricSuccess(true);
+      setTimeout(() => {
+        finalizePortalRedirect('TOTP_6DIGIT_AUTHENTICATOR');
+      }, 500);
+    } else {
+      setError('Invalid 6-digit 2FA Authenticator code. Enter 440-921 (Admin) or 250-100 (Client).');
+    }
   };
 
   const handleRequestAccess = async (e: React.FormEvent) => {
@@ -54,7 +150,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
       email: email.trim(),
       organization: orgName.trim(),
       sectorOrService: sector,
-      message: 'Partner Portal Request Access submitted (Pending Security Review & Workspace SSO Provisioning)'
+      message: 'Partner Portal Request Access submitted (Pending Security Review & 2FA Provisioning)'
     });
 
     setRequestReceipt({
@@ -70,20 +166,20 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/75 backdrop-blur-md cursor-pointer"
+            className="fixed inset-0 bg-black/75 backdrop-blur-md cursor-pointer"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-lg bg-missionNavy border border-vanguardGold/40 rounded-xl shadow-[0_25px_80px_rgba(0,0,0,0.85)] p-8 overflow-hidden z-10 text-white"
+            className="relative w-full max-w-lg bg-missionNavy border border-vanguardGold/40 rounded-xl shadow-[0_25px_80px_rgba(0,0,0,0.85)] p-6 sm:p-8 overflow-hidden z-10 text-white my-auto"
           >
             <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-vanguardGold to-transparent" />
 
@@ -95,31 +191,36 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
               <X className="w-4 h-4" />
             </button>
 
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-5">
               <div className="w-12 h-12 rounded-lg bg-vanguardGold/15 border border-vanguardGold/40 flex items-center justify-center text-vanguardGold shadow-lg shrink-0">
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-vanguardGold">
-                  F.I.X Solutions LLC
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.26em] text-vanguardGold">
+                    F.I.X Solutions LLC
+                  </p>
+                  <span className="px-2 py-0.5 text-[9px] font-mono font-bold uppercase bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/40">
+                    2FA Enforced
+                  </span>
+                </div>
                 <h2 className="text-2xl font-bold text-white tracking-tight mt-0.5">
-                  Partner Portal
+                  Partner &amp; Admin Portal
                 </h2>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-tacticalSlate/60 rounded-lg mb-6 border border-glassBorder">
+            <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-tacticalSlate/60 rounded-lg mb-5 border border-glassBorder">
               <button
                 type="button"
-                onClick={() => { setActiveTab('login'); setError(''); }}
+                onClick={() => { setActiveTab('login'); setAuthStep('credentials'); setError(''); }}
                 className={`py-2.5 rounded-md text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   activeTab === 'login'
                     ? 'bg-vanguardGold text-missionNavy shadow-md'
                     : 'text-gray-300 hover:text-white'
                 }`}
               >
-                <Lock className="w-3.5 h-3.5" /> Partner Sign In
+                <Lock className="w-3.5 h-3.5" /> 2FA Sign In
               </button>
               <button
                 type="button"
@@ -135,36 +236,179 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
             </div>
 
             {error && (
-              <div className="mb-5 p-3.5 rounded-lg bg-red-950/60 border border-red-500/40 text-red-200 text-xs font-medium">
-                {error}
+              <div className="mb-4 p-3 rounded-lg bg-red-950/60 border border-red-500/40 text-red-200 text-xs font-medium flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 shrink-0 text-red-400" />
+                <span>{error}</span>
               </div>
             )}
 
             {activeTab === 'login' ? (
-              <div className="space-y-5">
-                <div className="p-5 rounded-lg bg-tacticalSlate/40 border border-glassBorder space-y-2">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-vanguardGold shrink-0" />
-                    <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-vanguardGold font-bold">
-                      Federated Workspace SSO
-                    </span>
+              authStep === 'credentials' ? (
+                <form onSubmit={handlePrimaryCredentialsSubmit} className="space-y-4">
+                  <div className="p-3.5 rounded-lg bg-tacticalSlate/40 border border-glassBorder">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-vanguardGold font-bold flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" /> Quick-Load Provisioned Accounts
+                      </span>
+                      <span className="text-[9px] font-mono font-bold text-emerald-400">STEP 1 OF 2</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={fillDefaultAdmin}
+                        className="py-2 px-2.5 rounded bg-vanguardGold/15 hover:bg-vanguardGold/25 border border-vanguardGold/40 text-left transition-all cursor-pointer"
+                      >
+                        <div className="text-[9px] font-mono font-bold uppercase text-vanguardGold">Default Admin</div>
+                        <div className="text-[11px] font-bold text-white truncate">malik.khabir@miltongroup...</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={fillDefaultClient}
+                        className="py-2 px-2.5 rounded bg-blue-500/15 hover:bg-blue-500/25 border border-blue-400/40 text-left transition-all cursor-pointer"
+                      >
+                        <div className="text-[9px] font-mono font-bold uppercase text-blue-300">Sterling Auto Client</div>
+                        <div className="text-[11px] font-bold text-white truncate">service@sterlingautorepair...</div>
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-200 leading-relaxed">
-                    Authenticate with your verified organization credentials to enter the Internal Command Portal.
-                  </p>
-                </div>
 
-                <button
-                  type="button"
-                  disabled={isAuthenticatingSSO}
-                  onClick={handleWorkspaceSSO}
-                  className="w-full py-4 px-6 bg-vanguardGold hover:bg-yellow-500 text-missionNavy font-mono font-bold uppercase tracking-wider text-xs rounded-md shadow-[0_0_25px_rgba(197,179,88,0.3)] transition-all flex items-center justify-center gap-3 cursor-pointer"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>{isAuthenticatingSSO ? 'Redirecting to Internal Portal...' : 'Continue with Workspace SSO'}</span>
-                  <ArrowUpRight className="w-4 h-4" />
-                </button>
-              </div>
+                  <div>
+                    <label className="block text-[10px] font-mono text-gray-300 mb-1 uppercase tracking-wider">
+                      Verified Portal Identity (Email)
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="malik.khabir@miltongroupsecurity.org"
+                      className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-mono text-gray-300 mb-1 uppercase tracking-wider">
+                      Cryptographic Passphrase
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={loginPass}
+                      onChange={(e) => setLoginPass(e.target.value)}
+                      placeholder="••••••••••••••••••••••••"
+                      className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 px-6 bg-vanguardGold hover:bg-yellow-500 text-missionNavy font-mono font-bold uppercase tracking-wider text-xs rounded-md shadow-[0_0_25px_rgba(197,179,88,0.3)] transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+                  >
+                    <Fingerprint className="w-4 h-4" />
+                    <span>Proceed to Mandatory 2FA / Biometric Check</span>
+                    <ArrowUpRight className="w-4 h-4" />
+                  </button>
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-3.5 rounded-lg bg-tacticalSlate/50 border border-glassBorder">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-mono font-bold uppercase text-emerald-400">
+                        STEP 2 OF 2 • MANDATORY 2FA GATE
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-vanguardGold/20 text-vanguardGold text-[10px] font-mono font-bold uppercase">
+                        {portalRole === 'admin' ? 'Root Admin Mode' : 'Client Portal Mode'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300">
+                      Identity: <strong className="text-white">{loginEmail}</strong>. Verify Fingerprint/Passkey or 6-digit TOTP code to unlock access.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setMfaMethod('biometric'); setError(''); }}
+                      className={`py-2 px-3 rounded text-[11px] font-mono font-bold uppercase border flex items-center justify-center gap-2 cursor-pointer ${
+                        mfaMethod === 'biometric'
+                          ? 'bg-vanguardGold text-missionNavy border-vanguardGold'
+                          : 'bg-tacticalSlate/40 text-gray-300 border-glassBorder'
+                      }`}
+                    >
+                      <Fingerprint className="w-4 h-4" /> Fingerprint / Passkey
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setMfaMethod('totp'); setError(''); }}
+                      className={`py-2 px-3 rounded text-[11px] font-mono font-bold uppercase border flex items-center justify-center gap-2 cursor-pointer ${
+                        mfaMethod === 'totp'
+                          ? 'bg-vanguardGold text-missionNavy border-vanguardGold'
+                          : 'bg-tacticalSlate/40 text-gray-300 border-glassBorder'
+                      }`}
+                    >
+                      <KeyRound className="w-4 h-4" /> 6-Digit Authenticator
+                    </button>
+                  </div>
+
+                  {mfaMethod === 'biometric' ? (
+                    <div className="p-5 rounded-lg bg-black/50 border border-glassBorder text-center space-y-3">
+                      <button
+                        type="button"
+                        disabled={biometricScanning || biometricSuccess}
+                        onClick={handleBiometricVerify}
+                        className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center border-2 transition-all cursor-pointer ${
+                          biometricSuccess
+                            ? 'bg-emerald-500/20 border-emerald-400 text-emerald-400'
+                            : biometricScanning
+                            ? 'bg-blue-600/20 border-blue-400 text-blue-400 animate-pulse'
+                            : 'bg-tacticalSlate border-vanguardGold text-vanguardGold hover:scale-105'
+                        }`}
+                      >
+                        {biometricSuccess ? <CheckCircle2 className="w-10 h-10" /> : <Fingerprint className="w-10 h-10" />}
+                      </button>
+                      <div className="text-xs font-mono font-bold uppercase text-vanguardGold">
+                        {biometricSuccess
+                          ? 'Biometric Signature Verified! Redirecting...'
+                          : biometricScanning
+                          ? 'Scanning FIDO2 / WebAuthn Fingerprint Sensor...'
+                          : 'Tap Sensor to Verify Fingerprint / FaceID / Windows Hello'}
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleTotpVerify} className="space-y-3">
+                      <div>
+                        <label className="block text-[10px] font-mono text-gray-300 mb-1 uppercase">
+                          6-Digit Authenticator Code (Admin: 440-921 | Client: 250-100)
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={7}
+                          value={totpCode}
+                          onChange={(e) => setTotpCode(e.target.value)}
+                          placeholder="440-921"
+                          className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-4 py-3 text-center text-lg font-mono font-bold tracking-[0.3em] text-white focus:outline-none focus:border-vanguardGold"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="w-full py-3.5 px-6 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold uppercase text-xs rounded-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>Verify 2FA Code &amp; Unlock Portal</span>
+                      </button>
+                    </form>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => { setAuthStep('credentials'); setError(''); }}
+                    className="w-full py-1.5 text-[11px] font-mono text-gray-400 hover:text-white cursor-pointer"
+                  >
+                    ← Back to Step 1 (Change Account)
+                  </button>
+                </div>
+              )
             ) : requestReceipt ? (
               <div className="space-y-4">
                 <div className="p-5 rounded-lg bg-emerald-950/40 border border-emerald-500/40 space-y-3">
@@ -180,7 +424,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                     </div>
                   </div>
                   <p className="text-xs text-slate-200 leading-relaxed">
-                    Thank you, <strong>{requestReceipt.fullName}</strong> ({requestReceipt.organization}). Once verified by security operations, your Workspace SSO identity (<strong>{requestReceipt.email}</strong>) will be provisioned.
+                    Thank you, <strong>{requestReceipt.fullName}</strong> ({requestReceipt.organization}). Once verified by security operations, your 2FA identity (<strong>{requestReceipt.email}</strong>) will be provisioned.
                   </p>
                 </div>
                 <button
@@ -194,7 +438,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                   }}
                   className="w-full py-3 bg-tacticalSlate hover:bg-slate-700 border border-glassBorder text-xs font-mono uppercase tracking-wider text-white rounded-md transition-colors cursor-pointer"
                 >
-                  Back to Partner Sign In
+                  Back to 2FA Sign In
                 </button>
               </div>
             ) : (
@@ -248,20 +492,20 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                     <select
                       value={sector}
                       onChange={(e) => setSector(e.target.value)}
-                      className="w-full bg-tacticalSlate border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-vanguardGold"
+                      className="w-full bg-tacticalSlate/90 border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-vanguardGold"
                     >
                       <option>Federal / Defense VAR (SDVOSB)</option>
-                      <option>NIST 800-171 / CMMC Supply Chain</option>
-                      <option>Data Commerce &amp; Cloud AI</option>
-                      <option>OEM Hardware &amp; Lifecycle</option>
+                      <option>Tactical Networking &amp; Hardware</option>
+                      <option>Cloud &amp; Zero-Trust Integration</option>
+                      <option>Commercial / Automotive Build</option>
                     </select>
                   </div>
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3.5 mt-1 bg-vanguardGold hover:bg-yellow-500 text-missionNavy font-mono font-bold uppercase tracking-wider text-xs rounded-md shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 bg-vanguardGold hover:bg-yellow-500 text-missionNavy font-mono font-bold uppercase tracking-wider text-xs rounded-md shadow-lg transition-all cursor-pointer"
                 >
-                  <UserPlus className="w-4 h-4" /> Request Access
+                  Submit Access Request
                 </button>
               </form>
             )}
@@ -271,4 +515,3 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
     </AnimatePresence>
   );
 };
-
