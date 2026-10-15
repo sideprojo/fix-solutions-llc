@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Lock, ShieldCheck, CheckCircle2, ExternalLink, UserCheck } from 'lucide-react';
+import { X, Lock, ShieldCheck, CheckCircle2, ArrowUpRight, UserPlus } from 'lucide-react';
 import { dispatchWorkspaceLead } from '../lib/workspaceWebhook';
 
 const HOSTED_INTERNAL_PORTAL = 'https://mgc-external-site-254657731107.us-west1.run.app/onboarding-portal.html';
@@ -33,18 +33,17 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
   const handleWorkspaceSSO = () => {
     setError('');
     setIsAuthenticatingSSO(true);
-    // Clear any legacy local session bypass keys
     localStorage.removeItem('mgc_onboarded_session');
     const targetUrl = `${getInternalPortalUrl()}?sso=workspace&source=fix.miltongroupsecurity.org`;
     setTimeout(() => {
       window.location.href = targetUrl;
-    }, 450);
+    }, 400);
   };
 
-  const handleAccessRequest = async (e: React.FormEvent) => {
+  const handleRequestAccess = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || !email.trim() || !orgName.trim()) {
-      setError('Please complete all required fields to submit an access request.');
+      setError('Please complete all required fields.');
       return;
     }
     setError('');
@@ -55,7 +54,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
       email: email.trim(),
       organization: orgName.trim(),
       sectorOrService: sector,
-      message: 'Partner Portal Access Request submitted (Pending Security Review & Workspace SSO Provisioning)'
+      message: 'Partner Portal Request Access submitted (Pending Security Review & Workspace SSO Provisioning)'
     });
 
     setRequestReceipt({
@@ -80,59 +79,58 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
             className="absolute inset-0 bg-black/75 backdrop-blur-md cursor-pointer"
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-xl bg-missionNavy border border-vanguardGold/40 rounded-xl shadow-[0_25px_80px_rgba(0,0,0,0.85)] p-8 overflow-hidden z-10 text-white"
+            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="relative w-full max-w-lg bg-missionNavy border border-vanguardGold/40 rounded-xl shadow-[0_25px_80px_rgba(0,0,0,0.85)] p-8 overflow-hidden z-10 text-white"
           >
+            <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-vanguardGold to-transparent" />
+
             <button
               onClick={onClose}
               className="absolute top-5 right-5 p-2 bg-tacticalSlate/60 hover:bg-vanguardGold hover:text-missionNavy rounded-lg transition-colors z-20 text-gray-200"
+              aria-label="Close partner portal modal"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-lg bg-vanguardGold/15 border border-vanguardGold/40 flex items-center justify-center text-vanguardGold shadow-lg">
+              <div className="w-12 h-12 rounded-lg bg-vanguardGold/15 border border-vanguardGold/40 flex items-center justify-center text-vanguardGold shadow-lg shrink-0">
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-vanguardGold bg-vanguardGold/10 border border-vanguardGold/30 px-2.5 py-0.5 rounded">
-                    SDVOSB Tactical Gateway
-                  </span>
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded">
-                    ZERO-TRUST SSO
-                  </span>
-                </div>
-                <h2 className="text-2xl font-bold text-white tracking-tight mt-1">
-                  Partner Portal &amp; Access Request
+                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-vanguardGold">
+                  F.I.X Solutions LLC
+                </p>
+                <h2 className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                  Partner Portal
                 </h2>
               </div>
             </div>
 
-            <div className="flex gap-2 p-1.5 bg-tacticalSlate/50 rounded-lg mb-6 border border-glassBorder">
+            <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-tacticalSlate/60 rounded-lg mb-6 border border-glassBorder">
               <button
                 type="button"
                 onClick={() => { setActiveTab('login'); setError(''); }}
-                className={`flex-1 py-2.5 rounded-md text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                className={`py-2.5 rounded-md text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   activeTab === 'login'
                     ? 'bg-vanguardGold text-missionNavy shadow-md'
                     : 'text-gray-300 hover:text-white'
                 }`}
               >
-                <Lock className="w-4 h-4" /> Partner Sign In
+                <Lock className="w-3.5 h-3.5" /> Partner Sign In
               </button>
               <button
                 type="button"
                 onClick={() => { setActiveTab('request'); setError(''); }}
-                className={`flex-1 py-2.5 rounded-md text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                className={`py-2.5 rounded-md text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   activeTab === 'request'
                     ? 'bg-vanguardGold text-missionNavy shadow-md'
                     : 'text-gray-300 hover:text-white'
                 }`}
               >
-                <UserCheck className="w-4 h-4" /> Access Request
+                <UserPlus className="w-3.5 h-3.5" /> Request Access
               </button>
             </div>
 
@@ -144,17 +142,15 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
 
             {activeTab === 'login' ? (
               <div className="space-y-5">
-                <div className="p-5 rounded-lg bg-tacticalSlate/40 border border-glassBorder space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono uppercase tracking-wider text-vanguardGold font-bold">
-                      Identity Provider Enforcement
-                    </span>
-                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">
-                      NIST 800-171 / CMMC L2
+                <div className="p-5 rounded-lg bg-tacticalSlate/40 border border-glassBorder space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-vanguardGold shrink-0" />
+                    <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-vanguardGold font-bold">
+                      Federated Workspace SSO
                     </span>
                   </div>
                   <p className="text-xs text-slate-200 leading-relaxed">
-                    Static access keys are disabled for security compliance. Partner authentication is strictly enforced via federated <strong>Workspace SSO</strong> and redirects directly to the authenticated Internal Command Portal.
+                    Authenticate with your verified organization credentials to enter the Internal Command Portal.
                   </p>
                 </div>
 
@@ -162,24 +158,12 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                   type="button"
                   disabled={isAuthenticatingSSO}
                   onClick={handleWorkspaceSSO}
-                  className="w-full py-4 px-6 bg-vanguardGold hover:bg-yellow-500 text-missionNavy font-mono font-bold uppercase tracking-wider text-xs rounded-md shadow-[0_0_25px_rgba(197,179,88,0.35)] transition-all flex items-center justify-center gap-3 cursor-pointer"
+                  className="w-full py-4 px-6 bg-vanguardGold hover:bg-yellow-500 text-missionNavy font-mono font-bold uppercase tracking-wider text-xs rounded-md shadow-[0_0_25px_rgba(197,179,88,0.3)] transition-all flex items-center justify-center gap-3 cursor-pointer"
                 >
-                  <ShieldCheck className="w-5 h-5" />
-                  <span>{isAuthenticatingSSO ? 'Authenticating & Redirecting to Internal Portal...' : 'Workspace SSO — Authenticate & Redirect'}</span>
-                  <ExternalLink className="w-4 h-4" />
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>{isAuthenticatingSSO ? 'Redirecting to Internal Portal...' : 'Continue with Workspace SSO'}</span>
+                  <ArrowUpRight className="w-4 h-4" />
                 </button>
-
-                <p className="text-[11px] font-mono text-center text-slate-300">
-                  Need partner credentials provisioned? Select the{' '}
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('request')}
-                    className="text-vanguardGold underline hover:text-yellow-300 font-bold"
-                  >
-                    Access Request
-                  </button>{' '}
-                  tab.
-                </p>
               </div>
             ) : requestReceipt ? (
               <div className="space-y-4">
@@ -188,15 +172,15 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                     <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
                     <div>
                       <h3 className="text-sm font-bold text-white">
-                        Access Request Logged — Pending Security Verification
+                        Request Logged for Review
                       </h3>
                       <p className="text-[11px] font-mono text-vanguardGold">
-                        Receipt ID: {requestReceipt.receiptId} • {requestReceipt.timestamp}
+                        {requestReceipt.receiptId} • {requestReceipt.timestamp}
                       </p>
                     </div>
                   </div>
                   <p className="text-xs text-slate-200 leading-relaxed">
-                    Thank you, <strong>{requestReceipt.fullName}</strong> ({requestReceipt.organization}). Your request has been transmitted to F.I.X Solutions LLC &amp; Milton Group Concepts LLC security operations. View access is never auto-granted; once verified, your Workspace SSO identity (<strong>{requestReceipt.email}</strong>) will be provisioned.
+                    Thank you, <strong>{requestReceipt.fullName}</strong> ({requestReceipt.organization}). Once verified by security operations, your Workspace SSO identity (<strong>{requestReceipt.email}</strong>) will be provisioned.
                   </p>
                 </div>
                 <button
@@ -208,16 +192,16 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                     setOrgName('');
                     setActiveTab('login');
                   }}
-                  className="w-full py-3 bg-tacticalSlate hover:bg-slate-700 border border-glassBorder text-xs font-mono uppercase tracking-wider text-white rounded-md transition-colors"
+                  className="w-full py-3 bg-tacticalSlate hover:bg-slate-700 border border-glassBorder text-xs font-mono uppercase tracking-wider text-white rounded-md transition-colors cursor-pointer"
                 >
-                  Return to Partner Sign In
+                  Back to Partner Sign In
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleAccessRequest} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleRequestAccess} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-xs font-mono text-gray-200 mb-1.5 uppercase">
+                    <label className="block text-[11px] font-mono text-gray-300 mb-1.5 uppercase tracking-wider">
                       Full Name &amp; Title
                     </label>
                     <input
@@ -225,13 +209,13 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                       required
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Contracting Officer / Program Lead"
-                      className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-4 py-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
+                      placeholder="Contracting Officer"
+                      className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-mono text-gray-200 mb-1.5 uppercase">
-                      Official Work Email
+                    <label className="block text-[11px] font-mono text-gray-300 mb-1.5 uppercase tracking-wider">
+                      Work Email
                     </label>
                     <input
                       type="email"
@@ -239,13 +223,13 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="officer@agency.gov"
-                      className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-4 py-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
+                      className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-xs font-mono text-gray-200 mb-1.5 uppercase">
+                    <label className="block text-[11px] font-mono text-gray-300 mb-1.5 uppercase tracking-wider">
                       Agency / Organization
                     </label>
                     <input
@@ -253,31 +237,31 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                       required
                       value={orgName}
                       onChange={(e) => setOrgName(e.target.value)}
-                      placeholder="Dept. of Defense / VA / Prime Partner"
-                      className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-4 py-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
+                      placeholder="Dept. of Defense / VA"
+                      className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-mono text-gray-200 mb-1.5 uppercase">
+                    <label className="block text-[11px] font-mono text-gray-300 mb-1.5 uppercase tracking-wider">
                       Procurement Track
                     </label>
                     <select
                       value={sector}
                       onChange={(e) => setSector(e.target.value)}
-                      className="w-full bg-tacticalSlate border border-glassBorder rounded-md px-4 py-3 text-sm text-white focus:outline-none focus:border-vanguardGold"
+                      className="w-full bg-tacticalSlate border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-vanguardGold"
                     >
                       <option>Federal / Defense VAR (SDVOSB)</option>
-                      <option>NIST 800-171 / CMMC Secure Supply Chain</option>
-                      <option>Data Commerce &amp; Cloud AI Integration</option>
-                      <option>OEM Hardware &amp; Lifecycle Management</option>
+                      <option>NIST 800-171 / CMMC Supply Chain</option>
+                      <option>Data Commerce &amp; Cloud AI</option>
+                      <option>OEM Hardware &amp; Lifecycle</option>
                     </select>
                   </div>
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3.5 bg-vanguardGold hover:bg-yellow-500 text-missionNavy font-bold uppercase tracking-wider text-xs rounded-md shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 mt-1 bg-vanguardGold hover:bg-yellow-500 text-missionNavy font-mono font-bold uppercase tracking-wider text-xs rounded-md shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <UserCheck className="w-4 h-4" /> Request Access
+                  <UserPlus className="w-4 h-4" /> Request Access
                 </button>
               </form>
             )}
@@ -287,3 +271,4 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
     </AnimatePresence>
   );
 };
+
