@@ -846,26 +846,26 @@ export default function App() {
                 </span>
              </div>
           </div>
-          <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between mt-4">
-            <div className={`flex items-center space-x-3 cursor-pointer ${isScrolled ? 'pointer-events-none' : 'pointer-events-auto'}`} onClick={() => setCurrentPage('home')}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 sm:h-24 flex items-center justify-between mt-3 sm:mt-4">
+            <div className={`flex items-center space-x-2.5 sm:space-x-3 cursor-pointer ${isScrolled ? 'pointer-events-none' : 'pointer-events-auto'}`} onClick={() => setCurrentPage('home')}>
               <div className="flex items-center">
-                <Plane className="text-slate-300/80 mix-blend-plus-lighter -rotate-45 w-12 h-12 mr-2" />
-                <FixLogo className="w-14 h-14" />
+                <Plane className="hidden sm:block text-slate-300/80 mix-blend-plus-lighter -rotate-45 w-12 h-12 mr-2" />
+                <FixLogo className="w-10 h-10 sm:w-14 sm:h-14" />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-2xl tracking-tight drop-shadow-lg leading-none">F.I.X SOLUTIONS</span>
-                <span className="text-[10px] font-mono text-vanguardGold tracking-widest uppercase mt-1 font-semibold">Federal Integration & eXchange</span>
+                <span className="font-bold text-lg sm:text-2xl tracking-tight drop-shadow-lg leading-none">F.I.X SOLUTIONS</span>
+                <span className="text-[8.5px] sm:text-[10px] font-mono text-vanguardGold tracking-widest uppercase mt-1 font-semibold">Federal Integration & eXchange</span>
               </div>
             </div>
           </div>
         </header>
 
         {/* RADIAL TACTICAL DOCK — Fixed Top-Right & Auto-Hides on Scroll */}
-        <div className={`fixed top-6 right-6 xl:right-[calc(50vw-40rem+1.5rem)] z-50 transition-all duration-500 ease-in-out ${isScrolled ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0 pointer-events-auto'}`}>
+        <div className={`fixed top-5 right-4 sm:top-6 sm:right-6 xl:right-[calc(50vw-40rem+1.5rem)] z-50 transition-all duration-500 ease-in-out ${isScrolled ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0 pointer-events-auto'}`}>
           <div className="relative flex items-center justify-end">
             <button 
               onClick={() => setIsDockOpen(!isDockOpen)}
-              className="bg-vanguardGold text-missionNavy px-6 py-3 shadow-[0_0_25px_rgba(197,179,88,0.5)] hover:scale-105 hover:shadow-[0_0_35px_rgba(197,179,88,0.75)] transition-all z-50 relative font-serif font-bold tracking-widest text-lg cursor-pointer"
+              className="bg-vanguardGold text-missionNavy px-4 py-2 sm:px-6 sm:py-3 shadow-[0_0_25px_rgba(197,179,88,0.5)] hover:scale-105 hover:shadow-[0_0_35px_rgba(197,179,88,0.75)] transition-all z-50 relative font-serif font-bold tracking-widest text-sm sm:text-lg cursor-pointer"
               style={{ borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%' }}
             >
               {isDockOpen ? 'CLOSE' : 'MENU'}
@@ -873,7 +873,7 @@ export default function App() {
 
             <AnimatePresence>
               {isDockOpen && (
-                <div className="absolute right-0 top-0 w-[320px] h-[300px] pointer-events-none">
+                <div className="absolute right-0 top-0 w-[300px] sm:w-[320px] h-[300px] pointer-events-none">
                   {/* Tactical Radial Radar Arc & Spoke Overlay */}
                   <motion.svg
                     initial={{ opacity: 0, scale: 0.6 }}
@@ -946,7 +946,35 @@ export default function App() {
           </div>
         </div>
 
-        <main className="flex-grow pt-24 pb-24 flex flex-col">
+        {/* Dedicated Mobile Bottom Tactical Thumb Bar (< 768px Only — Zero PC Interference) */}
+        <nav className="md:hidden fixed bottom-3 inset-x-3 z-50 bg-missionNavy/95 backdrop-blur-2xl border border-vanguardGold/40 shadow-[0_12px_32px_rgba(0,0,0,0.75)] rounded-2xl px-2 py-2 flex items-center justify-around">
+          {[
+            { id: 'home', label: 'Home' },
+            { id: 'expertise', label: 'Expertise' },
+            { id: 'about', label: 'About' },
+            { id: 'quote', label: 'Quote' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => { setCurrentPage(tab.id); setIsDockOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${
+                currentPage === tab.id
+                  ? 'bg-vanguardGold text-missionNavy shadow-sm'
+                  : 'text-slate-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+          <button
+            onClick={() => { setIsPortalModalOpen(true); setIsDockOpen(false); }}
+            className="px-3 py-1.5 rounded-xl bg-vanguardGold/15 border border-vanguardGold/50 text-vanguardGold text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"
+          >
+            <Lock className="w-2.5 h-2.5" /> SSO
+          </button>
+        </nav>
+
+        <main className="flex-grow pt-16 sm:pt-24 pb-24 flex flex-col">
           <AnimatePresence mode="wait">
             {currentPage === 'home' && (
               <motion.div 
@@ -958,18 +986,18 @@ export default function App() {
                 className="flex flex-col w-full flex-grow"
               >
                 {/* SECTION 1: HERO */}
-        <section className="relative min-h-[85vh] flex items-start justify-center overflow-hidden pt-40">
+        <section className="relative min-h-[78vh] sm:min-h-[85vh] flex items-start justify-center overflow-hidden pt-20 sm:pt-40">
           {/* Gradient overlay to blend hero text with the global background */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-missionNavy/20 to-missionNavy z-10" />
 
-          <div className="relative z-20 max-w-7xl mx-auto px-6 w-full pt-12">
+          <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 w-full pt-6 sm:pt-12">
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               className="flex flex-col items-center max-w-4xl mx-auto text-center"
             >
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-[1.1] mb-6 tracking-tight text-center">
+              <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold leading-[1.12] sm:leading-[1.1] mb-5 sm:mb-6 tracking-tight text-center">
                 <span className="relative inline-block">
                   <span className="text-white drop-shadow-lg">Engineering Procurement</span>
                   <motion.span 
@@ -998,7 +1026,7 @@ export default function App() {
                 </span>
               </h1>
               
-              <p className="text-lg sm:text-xl text-slate-200 font-medium mb-10 max-w-2xl leading-relaxed text-center drop-shadow-sm">
+              <p className="text-base sm:text-xl text-slate-200 font-medium mb-8 sm:mb-10 max-w-2xl leading-relaxed text-center drop-shadow-sm px-2">
                 We deliver secure supply chain logistics, engineering integration, and lifecycle management for federal and state agencies.
               </p>
 
