@@ -57,19 +57,25 @@ const AnimatedTruckMarker = ({ start, end, duration, delay }: { start: [number, 
   return <Marker position={pos} icon={truckIcon} />;
 };
 
-const DockItem = ({ label, onClick, active }: any) => (
+const RadialDockItem = ({ label, icon: Icon, onClick, active, x, y, index }: any) => (
   <motion.button
-    whileHover={{ scale: 1.05, x: -5 }}
+    initial={{ opacity: 0, x: 0, y: 0, scale: 0.3 }}
+    animate={{ opacity: 1, x, y, scale: 1 }}
+    exit={{ opacity: 0, x: 0, y: 0, scale: 0.3 }}
+    transition={{ type: "spring", stiffness: 280, damping: 22, delay: index * 0.045 }}
+    whileHover={{ scale: 1.08 }}
     whileTap={{ scale: 0.95 }}
     onClick={onClick}
-    className={`relative group flex items-center justify-center px-8 py-3 -skew-x-12 transition-all duration-300 rounded-sm ${
+    style={{ position: 'absolute', right: 0, top: 0 }}
+    className={`group flex items-center gap-2.5 px-5 py-2.5 -skew-x-12 transition-colors duration-300 rounded-sm whitespace-nowrap ${
       active 
-        ? 'border-l border-t border-white/20 border-r border-b border-black/80 bg-gradient-to-br from-vanguardGold via-yellow-500 to-yellow-600 text-missionNavy shadow-[0_0_25px_rgba(197,179,88,0.6)]' 
-        : 'border border-transparent bg-transparent text-gray-400 hover:border-l hover:border-t hover:border-white/20 hover:border-r hover:border-b hover:border-black/80 hover:bg-gradient-to-br hover:from-tacticalSlate/90 hover:to-missionNavy/90 hover:backdrop-blur-md hover:text-white hover:border-vanguardGold/50 hover:shadow-[0_0_20px_rgba(197,179,88,0.4)]'
+        ? 'border border-vanguardGold bg-gradient-to-br from-vanguardGold via-yellow-500 to-yellow-600 text-missionNavy shadow-[0_0_25px_rgba(197,179,88,0.75)]' 
+        : 'border border-vanguardGold/40 bg-missionNavy/95 text-gray-200 hover:bg-tacticalSlate hover:text-vanguardGold hover:border-vanguardGold hover:shadow-[0_0_20px_rgba(197,179,88,0.45)] backdrop-blur-md'
     }`}
   >
-    <div className={`absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent pointer-events-none transition-opacity duration-300 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
-    <span className="skew-x-12 font-serif font-bold italic tracking-[0.2em] text-sm md:text-base uppercase drop-shadow-md relative z-10">
+    <span className={`w-2 h-2 rounded-full skew-x-12 ${active ? 'bg-missionNavy' : 'bg-vanguardGold shadow-[0_0_8px_rgba(197,179,88,0.9)]'}`} />
+    {Icon && <Icon className={`w-3.5 h-3.5 skew-x-12 ${active ? 'text-missionNavy' : 'text-vanguardGold'}`} />}
+    <span className="skew-x-12 font-serif font-bold italic tracking-[0.18em] text-xs md:text-sm uppercase drop-shadow-md relative z-10">
       {label}
     </span>
   </motion.button>
@@ -758,35 +764,90 @@ export default function App() {
           </div>
         </header>
 
-        {/* ROCKET DOCK */}
-        <div className={`fixed right-6 xl:right-[calc(50vw-40rem+1.5rem)] z-50 flex flex-row-reverse items-center pointer-events-auto transition-all duration-700 ease-in-out ${menuPosition === 'bottom' ? 'top-[580px]' : 'top-6'}`}>
-          <div className="flex items-center ml-4">
+        {/* RADIAL TACTICAL DOCK */}
+        <div className={`fixed right-6 xl:right-[calc(50vw-40rem+1.5rem)] z-50 pointer-events-auto transition-all duration-700 ease-in-out ${menuPosition === 'bottom' ? 'top-[580px]' : 'top-6'}`}>
+          <div className="relative flex items-center justify-end">
             <button 
               onClick={() => setIsDockOpen(!isDockOpen)}
-              className="bg-vanguardGold text-missionNavy px-6 py-3 shadow-[0_0_20px_rgba(197,179,88,0.4)] hover:scale-105 hover:shadow-[0_0_30px_rgba(197,179,88,0.6)] transition-all z-50 relative font-serif font-bold tracking-widest text-lg"
+              className="bg-vanguardGold text-missionNavy px-6 py-3 shadow-[0_0_25px_rgba(197,179,88,0.5)] hover:scale-105 hover:shadow-[0_0_35px_rgba(197,179,88,0.75)] transition-all z-50 relative font-serif font-bold tracking-widest text-lg cursor-pointer"
               style={{ borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%' }}
             >
-              MENU
+              {isDockOpen ? 'CLOSE' : 'MENU'}
             </button>
+
+            <AnimatePresence>
+              {isDockOpen && (
+                <div className="absolute right-0 top-0 w-[320px] h-[300px] pointer-events-none">
+                  {/* Tactical Radial Radar Arc & Spoke Overlay */}
+                  <motion.svg
+                    initial={{ opacity: 0, scale: 0.6 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.6 }}
+                    transition={{ duration: 0.35 }}
+                    viewBox="0 0 320 300"
+                    className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
+                  >
+                    <circle cx="275" cy="26" r="195" fill="rgba(11,20,38,0.72)" stroke="#C5B358" strokeWidth="1" strokeDasharray="6 6" opacity="0.55" />
+                    <circle cx="275" cy="26" r="245" fill="none" stroke="#C5B358" strokeWidth="1" strokeDasharray="3 9" opacity="0.35" />
+                    {/* Radial Spokes from MENU Hub (275, 26) to each Node */}
+                    <line x1="275" y1="26" x2="125" y2="36" stroke="#C5B358" strokeWidth="1" strokeDasharray="3 4" opacity="0.4" />
+                    <line x1="275" y1="26" x2="140" y2="92" stroke="#C5B358" strokeWidth="1" strokeDasharray="3 4" opacity="0.4" />
+                    <line x1="275" y1="26" x2="170" y2="148" stroke="#C5B358" strokeWidth="1" strokeDasharray="3 4" opacity="0.4" />
+                    <line x1="275" y1="26" x2="210" y2="204" stroke="#C5B358" strokeWidth="1" strokeDasharray="3 4" opacity="0.4" />
+                    <line x1="275" y1="26" x2="260" y2="258" stroke="#C5B358" strokeWidth="1" strokeDasharray="3 4" opacity="0.4" />
+                  </motion.svg>
+
+                  <div className="relative w-full h-full pointer-events-auto">
+                    <RadialDockItem
+                      index={0}
+                      label="Home"
+                      icon={Home}
+                      x={-135}
+                      y={8}
+                      onClick={() => { setCurrentPage('home'); setIsDockOpen(false); }}
+                      active={currentPage === 'home'}
+                    />
+                    <RadialDockItem
+                      index={1}
+                      label="Expertise"
+                      icon={Cpu}
+                      x={-122}
+                      y={64}
+                      onClick={() => { setCurrentPage('expertise'); setIsDockOpen(false); }}
+                      active={currentPage === 'expertise'}
+                    />
+                    <RadialDockItem
+                      index={2}
+                      label="About"
+                      icon={Info}
+                      x={-96}
+                      y={120}
+                      onClick={() => { setCurrentPage('about'); setIsDockOpen(false); }}
+                      active={currentPage === 'about'}
+                    />
+                    <RadialDockItem
+                      index={3}
+                      label="Quote"
+                      icon={FileText}
+                      x={-58}
+                      y={176}
+                      onClick={() => { setCurrentPage('quote'); setIsDockOpen(false); }}
+                      active={currentPage === 'quote'}
+                    />
+                    <RadialDockItem
+                      index={4}
+                      label="Portal"
+                      icon={Lock}
+                      x={-8}
+                      y={232}
+                      onClick={() => { setIsPortalModalOpen(true); setIsDockOpen(false); }}
+                      active={isPortalModalOpen}
+                    />
+                  </div>
+                </div>
+              )}
+            </AnimatePresence>
           </div>
-          
-          <AnimatePresence>
-            {isDockOpen && (
-              <motion.div 
-                initial={{ opacity: 0, x: 20, scale: 0.8, transformOrigin: "right center" }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: 20, scale: 0.8 }}
-                transition={{ type: "spring", bounce: 0.4, duration: 0.6 }}
-                className="flex flex-row space-x-3 p-3 rounded-3xl"
-              >
-                <DockItem label="Home" onClick={() => {setCurrentPage('home'); setIsDockOpen(false);}} active={currentPage === 'home'} />
-                <DockItem label="Expertise" onClick={() => {setCurrentPage('expertise'); setIsDockOpen(false);}} active={currentPage === 'expertise'} />
-                <DockItem label="About" onClick={() => {setCurrentPage('about'); setIsDockOpen(false);}} active={currentPage === 'about'} />
-                <DockItem label="Quote" onClick={() => {setCurrentPage('quote'); setIsDockOpen(false);}} active={currentPage === 'quote'} />
-                <DockItem label="Portal" onClick={() => {setIsPortalModalOpen(true); setIsDockOpen(false);}} active={isPortalModalOpen} />
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         <main className="flex-grow pt-24 pb-24 flex flex-col">
