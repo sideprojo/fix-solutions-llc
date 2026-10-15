@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Lock, ShieldCheck, CheckCircle2, ExternalLink, UserCheck, KeyRound, Cpu, Globe, Layers, Sparkles } from 'lucide-react';
+import { dispatchWorkspaceLead } from '../lib/workspaceWebhook';
 
 interface SessionData {
   name: string;
@@ -30,6 +31,13 @@ const INTERNAL_PORTALS = [
     icon: Layers
   },
   {
+    title: 'SAM.gov & USAspending Contract Radar',
+    subtitle: 'Daily Automated VA/DoD Awards (NAICS 541611, 541512, 541614, 541330)',
+    page: 'sdvosb-contract-radar.html',
+    badge: 'LIVE FEDERAL API',
+    icon: Sparkles
+  },
+  {
     title: 'Defense-in-Depth & Compliance Center',
     subtitle: 'CMMC 2.0 L2 • NIST 800-171 • CIPP/US • Trust-But-Verify Audit',
     page: 'compliance-trust-center.html',
@@ -56,13 +64,6 @@ const INTERNAL_PORTALS = [
     page: 'earth-3d.html',
     badge: 'ZERO-CHARGE GUARD',
     icon: Globe
-  },
-  {
-    title: '360° WebXR VR Command Deck',
-    subtitle: 'Spatial Computing & Multi-Screen Operations Environment',
-    page: 'vr-command.html',
-    badge: 'WEBXR READY',
-    icon: Sparkles
   }
 ];
 
@@ -124,17 +125,26 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
     });
   };
 
-  const handleOnboard = (e: React.FormEvent) => {
+  const handleOnboard = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !email || !orgName) {
       setError('Please complete all required onboarding fields.');
       return;
     }
+    const leadRes = await dispatchWorkspaceLead({
+      sourceSite: 'F.I.X Solutions LLC',
+      formType: 'Client/Partner Onboarding',
+      fullName,
+      email,
+      organization: orgName,
+      sectorOrService: sector,
+      message: 'Onboarded via F.I.X Solutions Partner Portal Modal'
+    });
     saveSession({
       name: fullName,
       email,
       organization: `${orgName} (${sector})`,
-      role: 'VIEWER_ONBOARDED',
+      role: `VIEWER_ONBOARDED • ${leadRes.receiptId}`,
       clearance: 'Onboarded Partner — Internal Portal View Access',
       timestamp: new Date().toLocaleString()
     });
