@@ -1,0 +1,1294 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ShieldCheck, Server, Cpu, Download, ChevronRight, Rocket, Home, Info, FileText, Database, Network, Plane, Truck, Lock } from 'lucide-react';
+import { CapabilityStatementModal } from './components/CapabilityStatementModal';
+import { ClientPortalModal } from './components/ClientPortalModal';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+const tacticalIcon = new L.DivIcon({
+  className: 'custom-tactical-icon',
+  html: `<div style="background-color: #C5B358; width: 16px; height: 16px; border-radius: 50%; border: 3px solid #0B1426; box-shadow: 0 0 15px rgba(197,179,88,0.8); position: relative;"><div style="position: absolute; top: -4px; left: -4px; right: -4px; bottom: -4px; border: 1px solid rgba(197,179,88,0.4); border-radius: 50%; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div></div>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8]
+});
+
+const AnimatedTruckMarker = ({ start, end, duration, delay }: { start: [number, number], end: [number, number], duration: number, delay: number }) => {
+  const [pos, setPos] = useState<[number, number]>(start);
+  const [isFlipped, setIsFlipped] = useState(end[1] > start[1]);
+  
+  React.useEffect(() => {
+    let startTimestamp: number | null = null;
+    let animationFrame: number;
+    
+    const animate = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const elapsed = timestamp - startTimestamp;
+      
+      if (elapsed < delay) {
+        animationFrame = requestAnimationFrame(animate);
+        return;
+      }
+      
+      const cycle = ((elapsed - delay) % duration) / duration;
+      const progress = cycle < 0.5 ? cycle * 2 : (1 - cycle) * 2;
+      
+      const lat = start[0] + (end[0] - start[0]) * progress;
+      const lng = start[1] + (end[1] - start[1]) * progress;
+      
+      setPos([lat, lng]);
+      setIsFlipped(cycle < 0.5 ? end[1] > start[1] : start[1] > end[1]);
+      
+      animationFrame = requestAnimationFrame(animate);
+    };
+    
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [start, end, duration, delay]);
+
+  const truckIcon = React.useMemo(() => new L.DivIcon({
+    html: `<div style="color: #94a3b8; filter: drop-shadow(0 0 8px rgba(148,163,184,0.6)); transform: scaleX(${isFlipped ? -1 : 1});"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg></div>`,
+    className: 'custom-truck-icon',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  }), [isFlipped]);
+
+  return <Marker position={pos} icon={truckIcon} />;
+};
+
+const DockItem = ({ label, onClick, active }: any) => (
+  <motion.button
+    whileHover={{ scale: 1.05, x: -5 }}
+    whileTap={{ scale: 0.95 }}
+    onClick={onClick}
+    className={`relative group flex items-center justify-center px-8 py-3 -skew-x-12 transition-all duration-300 rounded-sm ${
+      active 
+        ? 'border-l border-t border-white/20 border-r border-b border-black/80 bg-gradient-to-br from-vanguardGold via-yellow-500 to-yellow-600 text-missionNavy shadow-[0_0_25px_rgba(197,179,88,0.6)]' 
+        : 'border border-transparent bg-transparent text-gray-400 hover:border-l hover:border-t hover:border-white/20 hover:border-r hover:border-b hover:border-black/80 hover:bg-gradient-to-br hover:from-tacticalSlate/90 hover:to-missionNavy/90 hover:backdrop-blur-md hover:text-white hover:border-vanguardGold/50 hover:shadow-[0_0_20px_rgba(197,179,88,0.4)]'
+    }`}
+  >
+    <div className={`absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent pointer-events-none transition-opacity duration-300 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
+    <span className="skew-x-12 font-serif font-bold italic tracking-[0.2em] text-sm md:text-base uppercase drop-shadow-md relative z-10">
+      {label}
+    </span>
+  </motion.button>
+);
+
+const allNewsItems = [
+  { 
+    source: "Defense.gov", 
+    title: "DoD Finalizes CMMC 2.0 Framework for Defense Contractors", 
+    time: "10 mins ago",
+    agency: "Dept. of Defense",
+    value: "Policy",
+    dueDate: "Q1 2027",
+    status: "Alert",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("DoD Finalizes CMMC 2.0 Framework for Defense Contractors technology defense procurement")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.defense.gov/News/Releases/Release/Article/3624332/dod-publishes-cmmc-20-proposed-rule/"
+  },
+  { 
+    source: "GSA.gov", 
+    title: "Next-Gen IT Services GWAC Opens for Small Business Bids", 
+    time: "1 hour ago",
+    agency: "GSA",
+    value: "$50B Ceiling",
+    dueDate: "Nov 01, 2026",
+    status: "Solicitation",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Next-Gen IT Services GWAC Opens for Small Business Bids technology defense procurement")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.gsa.gov/about-us/newsroom"
+  },
+  { 
+    source: "Defense.gov", 
+    title: "AI-Driven Logistics Network Expansion: Secure Supply Chain RFP", 
+    time: "3 hours ago",
+    agency: "Defense Logistics",
+    value: "$2.5B",
+    dueDate: "Dec 15, 2026",
+    status: "Pre-RFP",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Logistics Network Expansion: Secure Supply Chain RFP technology defense procurement")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.dla.mil/About-DLA/News/"
+  },
+  { 
+    source: "SAM.gov", 
+    title: "Enterprise Server Infrastructure Refresh Phase III", 
+    time: "5 hours ago",
+    agency: "Dept. of Energy",
+    value: "$450M",
+    dueDate: "Oct 30, 2026",
+    status: "Active",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Enterprise Server Infrastructure Refresh Phase III technology defense procurement")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://sam.gov/search"
+  },
+  { 
+    source: "CISA.gov", 
+    title: "Zero Trust Architecture Implementation Mandate Expanded", 
+    time: "6 hours ago",
+    agency: "Cybersecurity & Infrastructure",
+    value: "Directive",
+    dueDate: "Jan 15, 2027",
+    status: "Mandate",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Zero Trust Architecture Implementation Mandate Expanded cybersecurity")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.cisa.gov/news-events"
+  },
+  { 
+    source: "Defense.gov", 
+    title: "Joint Warfighting Cloud Capability (JWCC) Task Orders Issued", 
+    time: "1 day ago",
+    agency: "Dept. of Defense",
+    value: "$9B Ceiling",
+    dueDate: "Rolling",
+    status: "Awarded",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Joint Warfighting Cloud Capability JWCC Task Orders Issued technology defense")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.defense.gov/News/"
+  },
+  { 
+    source: "VA.gov", 
+    title: "Veterans Health Information Systems Modernization", 
+    time: "1 day ago",
+    agency: "Dept. of Veterans Affairs",
+    value: "$1.2B",
+    dueDate: "Feb 28, 2027",
+    status: "Active",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Veterans Health Information Systems Modernization healthcare IT")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.va.gov/opa/pressrel/"
+  },
+  { 
+    source: "DHS.gov", 
+    title: "Border Security Advanced Surveillance Tech Procurement", 
+    time: "2 days ago",
+    agency: "Dept. of Homeland Security",
+    value: "$350M",
+    dueDate: "Apr 05, 2027",
+    status: "Pre-RFP",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Border Security Advanced Surveillance Tech Procurement defense")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1555820585-c5ae44394b79?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.dhs.gov/news-releases"
+  },
+  { 
+    source: "NASA.gov", 
+    title: "Artemis Program Lunar Surface Communications Network", 
+    time: "2 days ago",
+    agency: "NASA",
+    value: "$800M",
+    dueDate: "May 12, 2027",
+    status: "Solicitation",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Artemis Program Lunar Surface Communications Network space technology")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.nasa.gov/news"
+  },
+  { 
+    source: "Treasury.gov", 
+    title: "Federal Financial Systems Modernization Initiative", 
+    time: "3 days ago",
+    agency: "Dept. of Treasury",
+    value: "$600M",
+    dueDate: "Jun 20, 2027",
+    status: "Active",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Federal Financial Systems Modernization Initiative finance technology")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://home.treasury.gov/news"
+  },
+  { 
+    source: "FBI.gov", 
+    title: "Next-Generation Biometric Identification System Upgrade", 
+    time: "4 days ago",
+    agency: "Federal Bureau of Investigation",
+    value: "$420M",
+    dueDate: "Jul 15, 2027",
+    status: "Pre-RFP",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Next-Generation Biometric Identification System Upgrade cybersecurity")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1507146426996-ef05306b995a?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.fbi.gov/news"
+  },
+  { 
+    source: "Commerce.gov", 
+    title: "Secure 5G Network Infrastructure Deployment Grants", 
+    time: "5 days ago",
+    agency: "Dept. of Commerce",
+    value: "$1.5B",
+    dueDate: "Aug 01, 2027",
+    status: "Solicitation",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Secure 5G Network Infrastructure Deployment Grants telecommunications")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.commerce.gov/news"
+  },
+  { 
+    source: "FAA.gov", 
+    title: "National Airspace System Air Traffic Control Modernization", 
+    time: "1 week ago",
+    agency: "Federal Aviation Admin",
+    value: "$2.1B",
+    dueDate: "Sep 10, 2027",
+    status: "Active",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("National Airspace System Air Traffic Control Modernization aviation technology")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.faa.gov/newsroom"
+  },
+  { 
+    source: "HHS.gov", 
+    title: "National Pandemic Early Warning Data Network", 
+    time: "1 week ago",
+    agency: "Health & Human Services",
+    value: "$850M",
+    dueDate: "Oct 25, 2027",
+    status: "Pre-RFP",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("National Pandemic Early Warning Data Network healthcare analytics")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.hhs.gov/about/news/index.html"
+  },
+  { 
+    source: "NSF.gov", 
+    title: "Quantum Computing Research Initiative Supercomputer Acquisition", 
+    time: "2 weeks ago",
+    agency: "National Science Foundation",
+    value: "$300M",
+    dueDate: "Nov 15, 2027",
+    status: "Solicitation",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Quantum Computing Research Initiative Supercomputer Acquisition science technology")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://www.nsf.gov/news/"
+  },
+  { 
+    source: "USPS.com", 
+    title: "Next Generation Delivery Vehicle Fleet Telematics System", 
+    time: "2 weeks ago",
+    agency: "U.S. Postal Service",
+    value: "$550M",
+    dueDate: "Dec 05, 2027",
+    status: "Active",
+    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Next Generation Delivery Vehicle Fleet Telematics System logistics technology")}?width=600&height=400&nologo=true`,
+    fallbackImage: "https://images.unsplash.com/photo-1580674285054-bed31e145f59?auto=format&fit=crop&q=80&w=600&h=400",
+    url: "https://about.usps.com/newsroom/"
+  }
+];
+
+const ProcurementNews = () => {
+  const [countdown, setCountdown] = useState(60);
+  const [rotationIndex, setRotationIndex] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<{item: any, index: number, rect: DOMRect} | null>(null);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          setIsRefreshing(true);
+          setTimeout(() => setIsRefreshing(false), 1500);
+          setRotationIndex((r) => (r + 1) % allNewsItems.length);
+          return 60;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Ensure we use all 16 items to prevent repeating too often
+  const newsItems = allNewsItems;
+
+  return (
+    <section id="procurement-news" className="w-full bg-transparent border-b border-glassBorder pt-16 pb-32 mt-32 mb-32 relative overflow-hidden">
+      {/* Subtle background glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-full bg-vanguardGold/5 blur-[120px] pointer-events-none" />
+      
+      {/* Refresh Timer (Only visible when hovering over a card) */}
+      <AnimatePresence>
+        {hoveredCard && (
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="fixed top-6 left-6 z-[100] flex items-center space-x-3 pointer-events-none"
+          >
+            <span className="font-cursive text-lg text-blue-400 opacity-90 drop-shadow-[0_0_8px_rgba(96,165,250,0.6)]">Refresh</span>
+            <div className="relative flex items-center justify-center">
+              <motion.div 
+                animate={isRefreshing ? { 
+                  scale: [1, 1.5, 1], 
+                  borderColor: ["rgba(197,179,88,0.3)", "rgba(197,179,88,1)", "rgba(197,179,88,0.3)"],
+                  boxShadow: ["0 0 15px rgba(197,179,88,0.2)", "0 0 30px rgba(197,179,88,0.8)", "0 0 15px rgba(197,179,88,0.2)"]
+                } : {}}
+                transition={{ duration: 1 }}
+                className="flex items-center justify-center w-8 h-8 rounded-full border border-vanguardGold/50 bg-black/60 shadow-[0_0_15px_rgba(197,179,88,0.4)] backdrop-blur-md"
+              >
+                <span className="text-[11px] font-mono text-transparent bg-clip-text bg-gradient-to-b from-vanguardGold to-yellow-200 font-bold tracking-tighter drop-shadow-sm">
+                  {countdown}
+                </span>
+              </motion.div>
+              {isRefreshing && (
+                <motion.div
+                  initial={{ scale: 1, opacity: 0.8 }}
+                  animate={{ scale: 3, opacity: 0 }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  className="absolute inset-0 rounded-full border-2 border-vanguardGold pointer-events-none"
+                />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Hovered Card Portal/Overlay */}
+      <AnimatePresence>
+        {hoveredCard && (
+          <motion.div
+            key={hoveredCard.index}
+            initial={{ opacity: 0, scale: 1, y: 0 }}
+            animate={{ opacity: 1, scale: 1.05, y: -10 }}
+            exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            style={{
+              position: 'fixed',
+              top: hoveredCard.rect.top,
+              left: hoveredCard.rect.left,
+              width: hoveredCard.rect.width,
+              height: hoveredCard.rect.height,
+              zIndex: 1000,
+            }}
+            onMouseLeave={() => setHoveredCard(null)}
+            onClick={() => window.open(hoveredCard.item.url, '_blank', 'noopener,noreferrer')}
+            className="flex flex-col bg-[#0B1426] border-l border-t border-white/30 border-r border-b border-black/80 rounded-tl-3xl rounded-br-3xl rounded-tr-sm rounded-bl-sm overflow-hidden cursor-pointer shadow-[0_30px_60px_-10px_rgba(0,0,0,0.9),0_0_40px_rgba(255,255,255,0.1)] -skew-x-6"
+          >
+            <div className="absolute inset-0 bg-gradient-to-tr from-slate-200/15 via-white/5 to-transparent pointer-events-none" />
+            <div className="flex flex-col h-full w-full skew-x-6">
+              <div className="relative h-48 w-full overflow-hidden shrink-0 rounded-tl-3xl rounded-tr-sm">
+                <img 
+                  src={hoveredCard.item.image} 
+                  alt={hoveredCard.item.title} 
+                  className="w-full h-full object-cover scale-110" 
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = hoveredCard.item.fallbackImage;
+                  }}
+                />
+                <div className="absolute top-4 right-4 z-20 flex items-center space-x-2">
+                  <span className="text-[10px] font-bold uppercase text-missionNavy bg-vanguardGold px-2 py-1 rounded shadow-sm">{hoveredCard.item.source}</span>
+                  <span className="text-[10px] font-bold uppercase text-white bg-red-600/90 backdrop-blur-sm px-2 py-1 rounded shadow-sm">{hoveredCard.item.status}</span>
+                </div>
+              </div>
+              
+              <div className="p-6 flex flex-col flex-grow relative z-20">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-[11px] text-vanguardGold font-mono tracking-wider">{hoveredCard.item.time}</span>
+                </div>
+                <h4 className="text-xl font-serif font-semibold text-vanguardGold leading-relaxed mb-4 drop-shadow-lg tracking-wide">{hoveredCard.item.title}</h4>
+                
+                <div className="mt-auto space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-glassBorder/50">
+                    <span className="text-[11px] text-gray-400 uppercase tracking-widest">Agency</span>
+                    <span className="text-[13px] text-white font-medium truncate ml-2">{hoveredCard.item.agency}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-glassBorder/50">
+                    <span className="text-[11px] text-gray-400 uppercase tracking-widest">Est. Value</span>
+                    <span className="text-[13px] text-vanguardGold font-mono font-bold">{hoveredCard.item.value}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] text-gray-400 uppercase tracking-widest">Due Date</span>
+                    <span className="text-[13px] text-white font-mono">{hoveredCard.item.dueDate}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Refresh Scanning Effect */}
+      <AnimatePresence>
+        {isRefreshing && (
+          <motion.div 
+            initial={{ x: '-100%', opacity: 0 }}
+            animate={{ x: '200%', opacity: 0.8 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+            className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-vanguardGold/40 to-transparent z-50 skew-x-12 pointer-events-none"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Live News Border Header */}
+      <div className="w-full relative z-20 px-10 flex items-end">
+        <div className="flex items-end w-full">
+          <div className="flex items-center bg-gradient-to-br from-tacticalSlate/90 to-missionNavy/90 border-l border-t border-r border-vanguardGold/40 px-8 py-3 rounded-tl-xl rounded-tr-sm backdrop-blur-md relative z-10 translate-y-[1px] shadow-[0_-5px_15px_rgba(0,0,0,0.3)] -skew-x-6">
+            <div className="skew-x-6">
+              <span className="text-vanguardGold font-serif italic font-bold tracking-[0.3em] text-sm md:text-base uppercase drop-shadow-[0_0_15px_rgba(197,179,88,0.8)]">
+                Live News
+              </span>
+            </div>
+          </div>
+          <div className="flex-grow h-[1px] bg-gradient-to-r from-vanguardGold/60 via-white/10 to-transparent translate-y-[1px]"></div>
+        </div>
+      </div>
+
+      <motion.div 
+        animate={isRefreshing ? { opacity: [1, 0.5, 1], filter: ["brightness(1)", "brightness(1.5)", "brightness(1)"] } : {}}
+        transition={{ duration: 1.5 }}
+        className="flex overflow-hidden relative w-full z-10"
+      >
+        <div 
+          className="flex animate-scroll-left min-w-max px-10 pb-10 pt-0 gap-8"
+          style={{ animationDuration: '120s' }}
+        >
+          {[...newsItems, ...newsItems].map((item, i) => (
+            <motion.div 
+              key={`news-item-${i}`} 
+              initial={isRefreshing ? { opacity: 0, scale: 0.95 } : false}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: i * 0.05 }}
+              onMouseEnter={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoveredCard({ item, index: i, rect });
+              }}
+              style={{ opacity: hoveredCard?.index === i ? 0 : 1 }}
+              className="flex flex-col bg-gradient-to-br from-tacticalSlate/90 via-tacticalSlate/60 to-missionNavy/90 border-l border-t border-white/10 border-r border-b border-black/80 rounded-tl-3xl rounded-br-3xl rounded-tr-sm rounded-bl-sm overflow-hidden transition-all duration-[1500ms] ease-in-out group w-[320px] md:w-[380px] h-[480px] shrink-0 backdrop-blur-md -skew-x-6 relative shadow-[15px_0_20px_-5px_rgba(0,0,0,0.7)]"
+            >
+              <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+              <div className="flex flex-col h-full w-full skew-x-6">
+                <div className="relative h-48 w-full overflow-hidden shrink-0 rounded-tl-3xl rounded-tr-sm">
+                  <div className="absolute inset-0 bg-missionNavy/40 transition-colors duration-[1500ms] z-10" />
+                  <img 
+                    src={item.image} 
+                    alt={item.title} 
+                    className="w-full h-full object-cover" 
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = item.fallbackImage;
+                    }}
+                  />
+                  <div className="absolute top-4 left-4 z-20 flex items-center space-x-2">
+                    <span className="text-[10px] font-bold uppercase text-missionNavy bg-vanguardGold px-2 py-1 rounded shadow-sm">{item.source}</span>
+                    <span className="text-[10px] font-bold uppercase text-white bg-red-600/90 backdrop-blur-sm px-2 py-1 rounded shadow-sm">{item.status}</span>
+                  </div>
+                </div>
+                
+                <div className="p-6 flex flex-col flex-grow relative z-20">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-[11px] text-vanguardGold font-mono tracking-wider">{item.time}</span>
+                  </div>
+                  <h4 className="text-xl font-serif font-semibold text-white leading-relaxed mb-4 group-hover:text-vanguardGold transition-colors duration-[1500ms] line-clamp-3 drop-shadow-lg tracking-wide">{item.title}</h4>
+                  
+                  <div className="mt-auto space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b border-glassBorder/30">
+                      <span className="text-[11px] text-gray-400 uppercase tracking-widest">Agency</span>
+                      <span className="text-[13px] text-gray-200 font-medium truncate ml-2">{item.agency}</span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-glassBorder/30">
+                      <span className="text-[11px] text-gray-400 uppercase tracking-widest">Est. Value</span>
+                      <span className="text-[13px] text-vanguardGold font-mono font-bold">{item.value}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] text-gray-400 uppercase tracking-widest">Due Date</span>
+                      <span className="text-[13px] text-gray-200 font-mono">{item.dueDate}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+    </section>
+  );
+};
+
+const FixLogo = ({ className = "w-full h-full drop-shadow-2xl max-w-md" }: { className?: string }) => (
+  <svg viewBox="0 0 400 400" className={className} xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#FDE047" />
+        <stop offset="100%" stopColor="#C5B358" />
+      </linearGradient>
+      <linearGradient id="navyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#1E293B" />
+        <stop offset="100%" stopColor="#0B1426" />
+      </linearGradient>
+      <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+        <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#000000" floodOpacity="0.5"/>
+      </filter>
+      <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="4" result="blur" />
+        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+      </filter>
+    </defs>
+
+    {/* Outer Tech Rings (Animated) */}
+    <circle cx="200" cy="200" r="180" fill="none" stroke="url(#goldGrad)" strokeWidth="2" strokeDasharray="4 8 16 8" opacity="0.6">
+      <animateTransform attributeName="transform" type="rotate" from="0 200 200" to="360 200 200" dur="30s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="200" cy="200" r="165" fill="none" stroke="#475569" strokeWidth="1" strokeDasharray="100 20" opacity="0.4">
+      <animateTransform attributeName="transform" type="rotate" from="360 200 200" to="0 200 200" dur="20s" repeatCount="indefinite" />
+    </circle>
+
+    {/* Main Cyber Shield */}
+    <path d="M 200 30 L 340 70 L 340 200 C 340 300 200 360 200 360 C 200 360 60 300 60 200 L 60 70 Z" fill="url(#navyGrad)" stroke="url(#goldGrad)" strokeWidth="4" filter="url(#shadow)" />
+    
+    {/* Shield Inner Bevel & Grid */}
+    <path d="M 200 45 L 325 80 L 325 195 C 325 285 200 340 200 340 C 200 340 75 285 75 195 L 75 80 Z" fill="#0F172A" stroke="#334155" strokeWidth="2" />
+    <g stroke="#1E293B" strokeWidth="2" opacity="0.8">
+      <line x1="200" y1="45" x2="200" y2="340" />
+      <line x1="75" y1="195" x2="325" y2="195" />
+      <path d="M 120 120 L 150 150 L 150 240" fill="none" />
+      <path d="M 280 120 L 250 150 L 250 240" fill="none" />
+    </g>
+
+    {/* Scanning Line Animation */}
+    <line x1="60" y1="70" x2="340" y2="70" stroke="url(#goldGrad)" strokeWidth="2" opacity="0.2" filter="url(#glow)">
+      <animate attributeName="y1" values="70;360;70" dur="6s" repeatCount="indefinite" />
+      <animate attributeName="y2" values="70;360;70" dur="6s" repeatCount="indefinite" />
+    </line>
+
+    {/* Robotic F.I.X Lettering */}
+    <g transform="translate(0, -15)">
+      {/* Solid Base */}
+      <g fill="url(#goldGrad)" filter="url(#shadow)">
+        <path d="M 93 210 L 93 120 L 148 120 L 158 135 L 118 135 L 118 155 L 143 155 L 153 170 L 118 170 L 118 210 Z" />
+        <polygon points="163,200 173,200 178,210 168,210" />
+        <polygon points="188,120 213,120 213,210 188,210" />
+        <polygon points="223,200 233,200 238,210 228,210" />
+        <path d="M 248 120 L 268 120 L 278 150 L 288 120 L 308 120 L 288 165 L 308 210 L 288 210 L 278 180 L 268 210 L 248 210 L 268 165 Z" />
+      </g>
+      
+      {/* Animated Glowing Traces */}
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" filter="url(#glow)" opacity="0.9">
+        <path d="M 93 210 L 93 120 L 148 120 L 158 135 L 118 135 L 118 155 L 143 155 L 153 170 L 118 170 L 118 210 Z" strokeDasharray="500" strokeDashoffset="500">
+          <animate attributeName="stroke-dashoffset" values="500;0;500" dur="6s" repeatCount="indefinite" />
+        </path>
+        <polygon points="188,120 213,120 213,210 188,210" strokeDasharray="300" strokeDashoffset="300">
+          <animate attributeName="stroke-dashoffset" values="300;0;300" dur="6s" begin="0.5s" repeatCount="indefinite" />
+        </polygon>
+        <path d="M 248 120 L 268 120 L 278 150 L 288 120 L 308 120 L 288 165 L 308 210 L 288 210 L 278 180 L 268 210 L 248 210 L 268 165 Z" strokeDasharray="500" strokeDashoffset="500">
+          <animate attributeName="stroke-dashoffset" values="500;0;500" dur="6s" begin="1s" repeatCount="indefinite" />
+        </path>
+      </g>
+    </g>
+
+    {/* Subtitle Banner */}
+    <g transform="translate(0, 250)">
+      <rect x="60" y="0" width="280" height="40" rx="4" fill="#0B1426" stroke="url(#goldGrad)" strokeWidth="2" filter="url(#shadow)" />
+      <text x="200" y="24" fontFamily="JetBrains Mono, monospace" fontWeight="700" fontSize="11" fill="url(#goldGrad)" textAnchor="middle" letterSpacing="1.5">FEDERAL INTEGRATION &amp; EXCHANGE</text>
+    </g>
+  </svg>
+);
+
+const USFlag = ({ variant = 'standard', className = "h-8 w-auto rounded shadow-sm border border-glassBorder/50" }: { variant?: 'standard' | 'tactical'; className?: string }) => {
+  const isTactical = variant === 'tactical';
+  
+  // Colors specifically designed to match and complement the dark metallic aesthetic of the app
+  const stripeColor1 = isTactical ? '#020617' : '#b22234'; // Pitch black vs deep patriotic red
+  const strokeColor = isTactical ? '#1e293b' : '#ffffff';  // Tactical dark gray/slate vs crisp white
+  const cantonColor = isTactical ? '#0f172a' : '#3c3b6e';  // Slate-900 vs navy blue
+  const starColor = isTactical ? '#475569' : '#ffffff';    // Cool slate gray vs clean white
+  
+  const E = 247;
+  const F = 210;
+  const starRadius = 55; // Slightly reduced to ensure pixel-perfect rendering spacing
+  
+  const stars: React.ReactNode[] = [];
+  for (let r = 0; r < 9; r++) {
+    const isEven = r % 2 === 0;
+    const count = isEven ? 6 : 5;
+    const y = (r + 1) * F;
+    
+    for (let k = 0; k < count; k++) {
+      const x = isEven ? (2 * k + 1) * E : (2 * k + 2) * E;
+      stars.push(
+        <polygon
+          key={`star-${r}-${k}`}
+          fill={starColor}
+          points={`
+            ${x},${y - starRadius}
+            ${x + starRadius * 0.224},${y - starRadius * 0.309}
+            ${x + starRadius * 0.951},${y - starRadius * 0.309}
+            ${x + starRadius * 0.363},${y + starRadius * 0.118}
+            ${x + starRadius * 0.588},${y + starRadius * 0.809}
+            ${x},${y + starRadius * 0.382}
+            ${x - starRadius * 0.588},${y + starRadius * 0.809}
+            ${x - starRadius * 0.363},${y + starRadius * 0.118}
+            ${x - starRadius * 0.951},${y - starRadius * 0.309}
+            ${x - starRadius * 0.224},${y - starRadius * 0.309}
+          `}
+        />
+      );
+    }
+  }
+
+  return (
+    <svg viewBox="0 0 7410 3900" className={className} xmlns="http://www.w3.org/2000/svg">
+      {/* Background (7 colored stripes) */}
+      <rect width="7410" height="3900" fill={stripeColor1} />
+      {/* 6 alternating stripes, styled with exact stroke coordinates */}
+      <path 
+        d="M0,450H7410M0,1050H7410M0,1650H7410M0,2250H7410M0,2850H7410M0,3450H7410" 
+        stroke={strokeColor} 
+        strokeWidth="300" 
+      />
+      {/* Blue / Dark Canton */}
+      <rect width="2964" height="2100" fill={cantonColor} />
+      {/* 50 pristine Vector Stars */}
+      <g>{stars}</g>
+    </svg>
+  );
+};
+
+export default function App() {
+  const [currentPage, setCurrentPage] = useState('home');
+  const [isDockOpen, setIsDockOpen] = useState(false);
+  const [isCapabilityModalOpen, setIsCapabilityModalOpen] = useState(false);
+  const [isPortalModalOpen, setIsPortalModalOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const [menuPosition, setMenuPosition] = useState<'top' | 'bottom'>('top');
+
+  const [quoteForm, setQuoteForm] = useState({
+    agency: '',
+    email: '',
+    naics: '',
+    requirements: ''
+  });
+
+  const handleQuoteSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const subject = encodeURIComponent(`Quote Request from ${quoteForm.agency}`);
+    const body = encodeURIComponent(
+      `Agency / Organization: ${quoteForm.agency}\n` +
+      `Contact Email: ${quoteForm.email}\n` +
+      `Target NAICS / Vehicle: ${quoteForm.naics}\n\n` +
+      `Requirements:\n${quoteForm.requirements}`
+    );
+    window.location.href = `mailto:malik.khabir@miltongroupsecurity.org?subject=${subject}&body=${body}`;
+  };
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+      setIsDockOpen(false); // Auto-hide menu on scroll
+      
+      const newsSection = document.getElementById('procurement-news');
+      if (newsSection) {
+        const rect = newsSection.getBoundingClientRect();
+        // Menu is at top-6 (24px) + height (~50px) -> top 74px
+        // Cards start at rect.top + 104px
+        // Overlap when rect.top + 104 < 74 => rect.top < -30
+        if (rect.top < -20 && rect.bottom > 100) {
+          setMenuPosition('bottom');
+        } else {
+          setMenuPosition('top');
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // AI/Bot Schema for Procurement Crawlers
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "GovernmentOrganization",
+    "name": "F.I.X Solutions LLC",
+    "description": "SDVOSB Value-Added Reseller for Federal Government",
+    "identifier": [
+      { "@type": "PropertyValue", "propertyID": "CAGE", "value": "12345" },
+      { "@type": "PropertyValue", "propertyID": "UEI", "value": "ABC123XYZ789" }
+    ],
+    "knowsAbout": ["NAICS 541519", "NAICS 334111", "NIST 800-171", "CMMC"]
+  };
+
+  return (
+    <div className="flex flex-col w-full min-h-screen bg-missionNavy text-white overflow-x-hidden selection:bg-vanguardGold selection:text-missionNavy relative">
+      {/* Fixed Cityscape Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <motion.div 
+          className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=2000&auto=format&fit=crop')] bg-cover opacity-50 mix-blend-luminosity" 
+          initial={{ backgroundPositionX: "50%", backgroundPositionY: "0%" }}
+          animate={{
+            backgroundPositionX: currentPage === 'home' ? "80%" : currentPage === 'expertise' ? "50%" : "10%",
+            backgroundPositionY: currentPage === 'home' ? "70%" : currentPage === 'expertise' ? "0%" : "100%"
+          }}
+          transition={{
+            backgroundPositionY: { 
+              duration: currentPage === 'home' ? 1.75 : currentPage === 'expertise' ? 1.75 : 0.75,
+              delay: currentPage === 'home' ? 0 : currentPage === 'expertise' ? 0.75 : 1.75,
+              ease: "easeInOut"
+            },
+            backgroundPositionX: {
+              duration: currentPage === 'home' ? 0.75 : currentPage === 'expertise' ? 0.75 : 1.75,
+              delay: currentPage === 'home' ? 1.75 : currentPage === 'expertise' ? 0 : 0,
+              ease: "easeInOut"
+            }
+          }}
+        />
+        <div className="absolute inset-0 bg-missionNavy/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-missionNavy/50 to-missionNavy" />
+      </div>
+
+      <div className="relative z-10 flex flex-col min-h-screen w-full">
+        {/* JSON-LD Script for AI Procurement Bots */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+
+        {/* HEADER */}
+        <header className={`fixed top-0 w-full z-40 bg-transparent transition-opacity duration-500 pointer-events-none ${isScrolled ? 'opacity-0' : 'opacity-100'}`}>
+          <div className="absolute top-0 w-full flex justify-center pointer-events-none">
+             <div className="bg-missionNavy/90 backdrop-blur-md border-b border-x border-glassBorder px-6 py-1.5 rounded-b-xl shadow-[0_4px_20px_rgba(0,0,0,0.65)] flex items-center justify-center">
+                <span className="font-mono text-[10px] sm:text-xs text-vanguardGold tracking-[0.4em] uppercase font-bold drop-shadow-sm">
+                  SDVOSB
+                </span>
+             </div>
+          </div>
+          <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between mt-4">
+            <div className={`flex items-center space-x-3 cursor-pointer ${isScrolled ? 'pointer-events-none' : 'pointer-events-auto'}`} onClick={() => setCurrentPage('home')}>
+              <div className="flex items-center">
+                <Plane className="text-slate-300/80 mix-blend-plus-lighter -rotate-45 w-12 h-12 mr-2" />
+                <FixLogo className="w-14 h-14" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-2xl tracking-tight drop-shadow-lg leading-none">F.I.X SOLUTIONS</span>
+                <span className="text-[10px] font-mono text-vanguardGold tracking-widest uppercase mt-1 font-semibold">Federal Integration & eXchange</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* ROCKET DOCK */}
+        <div className={`fixed right-6 xl:right-[calc(50vw-40rem+1.5rem)] z-50 flex flex-row-reverse items-center pointer-events-auto transition-all duration-700 ease-in-out ${menuPosition === 'bottom' ? 'top-[580px]' : 'top-6'}`}>
+          <div className="flex items-center ml-4">
+            <button 
+              onClick={() => setIsDockOpen(!isDockOpen)}
+              className="bg-vanguardGold text-missionNavy px-6 py-3 shadow-[0_0_20px_rgba(197,179,88,0.4)] hover:scale-105 hover:shadow-[0_0_30px_rgba(197,179,88,0.6)] transition-all z-50 relative font-serif font-bold tracking-widest text-lg"
+              style={{ borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%' }}
+            >
+              MENU
+            </button>
+          </div>
+          
+          <AnimatePresence>
+            {isDockOpen && (
+              <motion.div 
+                initial={{ opacity: 0, x: 20, scale: 0.8, transformOrigin: "right center" }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 20, scale: 0.8 }}
+                transition={{ type: "spring", bounce: 0.4, duration: 0.6 }}
+                className="flex flex-row space-x-3 p-3 rounded-3xl"
+              >
+                <DockItem label="Home" onClick={() => {setCurrentPage('home'); setIsDockOpen(false);}} active={currentPage === 'home'} />
+                <DockItem label="Expertise" onClick={() => {setCurrentPage('expertise'); setIsDockOpen(false);}} active={currentPage === 'expertise'} />
+                <DockItem label="About" onClick={() => {setCurrentPage('about'); setIsDockOpen(false);}} active={currentPage === 'about'} />
+                <DockItem label="Quote" onClick={() => {setCurrentPage('quote'); setIsDockOpen(false);}} active={currentPage === 'quote'} />
+                <DockItem label="Portal" onClick={() => {setIsPortalModalOpen(true); setIsDockOpen(false);}} active={isPortalModalOpen} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <main className="flex-grow pt-24 pb-24 flex flex-col">
+          <AnimatePresence mode="wait">
+            {currentPage === 'home' && (
+              <motion.div 
+                key="home"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col w-full flex-grow"
+              >
+                {/* SECTION 1: HERO */}
+        <section className="relative min-h-[85vh] flex items-start justify-center overflow-hidden pt-40">
+          {/* Gradient overlay to blend hero text with the global background */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-missionNavy/20 to-missionNavy z-10" />
+
+          <div className="relative z-20 max-w-7xl mx-auto px-6 w-full pt-12">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="flex flex-col items-center max-w-4xl mx-auto text-center"
+            >
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-[1.1] mb-6 tracking-tight text-center">
+                <span className="relative inline-block">
+                  <span className="text-white drop-shadow-lg">Engineering Procurement</span>
+                  <motion.span 
+                    className="absolute left-0 top-0 w-full h-full text-transparent bg-clip-text drop-shadow-lg"
+                    style={{ 
+                      backgroundImage: 'linear-gradient(to right, transparent 47.5%, #C5B358 48.5%, #3B82F6 50%, #C5B358 51.5%, transparent 52.5%)',
+                      backgroundSize: '300% 100%',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                    animate={{ 
+                      backgroundPosition: ["0% 0%", "100% 0%", "100% 0%", "0% 0%"]
+                    }}
+                    transition={{ 
+                      duration: 12, 
+                      repeat: Infinity, 
+                      times: [0, 0.5, 0.99, 1], 
+                      ease: ["linear", "linear", "linear"]
+                    }}
+                    aria-hidden="true"
+                  >
+                    Engineering Procurement
+                  </motion.span>
+                </span> <br />
+                <span className="font-serif italic font-medium text-transparent bg-clip-text bg-gradient-to-r from-vanguardGold to-yellow-200 pr-2">
+                  of the future.
+                </span>
+              </h1>
+              
+              <p className="text-lg sm:text-xl text-slate-200 font-medium mb-10 max-w-2xl leading-relaxed text-center drop-shadow-sm">
+                We deliver secure supply chain logistics, engineering integration, and lifecycle management for federal and state agencies.
+              </p>
+
+              <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full sm:w-auto justify-center">
+                <button 
+                  onClick={() => setIsCapabilityModalOpen(true)}
+                  className="flex items-center justify-center bg-vanguardGold text-missionNavy px-8 py-4 rounded-sm font-bold hover:bg-yellow-500 transition-all w-full sm:w-auto shadow-lg"
+                >
+                  <FileText size={18} className="mr-2" /> Capability Statement
+                </button>
+                <button onClick={() => setCurrentPage('quote')} className="flex items-center justify-center bg-glassBg border border-glassBorder text-white px-8 py-4 rounded-sm font-semibold hover:bg-tacticalSlate transition-all w-full sm:w-auto shadow-lg">
+                  Request Quote <ChevronRight size={18} className="ml-2" />
+                </button>
+                <button 
+                  onClick={() => setIsPortalModalOpen(true)}
+                  className="flex items-center justify-center bg-missionNavy/90 border border-vanguardGold/60 text-vanguardGold px-8 py-4 rounded-sm font-bold hover:bg-vanguardGold hover:text-missionNavy transition-all w-full sm:w-auto shadow-lg"
+                >
+                  <Lock size={17} className="mr-2" /> Partner Portal
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* SECTION 2: PARTNERSHIP RIBBON */}
+        <section className="w-full bg-tacticalSlate/30 border-t border-glassBorder py-8 overflow-hidden relative mt-32">
+          <div className="max-w-7xl mx-auto px-6 mb-8 flex justify-center items-center space-x-4 md:space-x-8">
+            <p className="text-3xl md:text-5xl font-cursive text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 drop-shadow-sm -rotate-2">
+              We can fix
+            </p>
+            <span className="text-gray-500 font-light text-xl md:text-2xl">&amp;</span>
+            <p className="text-3xl md:text-5xl font-cursive text-transparent bg-clip-text bg-gradient-to-r from-vanguardGold to-yellow-200 drop-shadow-sm rotate-2">
+              We can Source
+            </p>
+          </div>
+          
+          {/* Scrolling container */}
+          <div className="flex overflow-hidden relative w-full">
+            <div className="flex whitespace-nowrap animate-scroll-left space-x-16 items-center px-6 min-w-max">
+              {['CISCO', 'STRATEGIC SOURCING', 'PALO ALTO NETWORKS', 'SUPPLY CHAIN LOGISTICS', 'SPLUNK', 'LIFECYCLE MANAGEMENT', 'MICROSOFT', 'VENDOR MANAGEMENT', 'AWS', 'PROGRAM MANAGEMENT', 'FORTINET', 'CONTRACT ADMINISTRATION', 'VMWARE', 'RISK MITIGATION', 'DELL TECHNOLOGIES', 'COMPLIANCE AUDITING'].map((brand, i) => (
+                <span key={i} className="text-2xl md:text-3xl font-bold text-gray-500 opacity-40 tracking-tighter">
+                  {brand}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 2.5: PROCUREMENT NEWS */}
+        <ProcurementNews />
+              </motion.div>
+            )}
+
+            {currentPage === 'expertise' && (
+              <motion.div 
+                key="expertise"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col w-full flex-grow"
+              >
+                {/* SECTION 3: VALUE-ADD MATRIX */}
+                <section id="expertise" className="py-24 max-w-7xl mx-auto px-6 w-full">
+          <div className="mb-20 text-center flex flex-col items-center">
+            <motion.h2 
+              initial={{ y: 20 }}
+              animate={{ y: -10 }}
+              transition={{ delay: 0, duration: 3, ease: "easeOut" }}
+              className="text-4xl md:text-6xl font-sans font-light tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 uppercase drop-shadow-lg"
+            >
+              Expertise
+            </motion.h2>
+            <motion.div 
+              initial={{ opacity: 0.7 }}
+              animate={{ boxShadow: ["0px 0px 0px rgba(197,179,88,0)", "0px 15px 40px rgba(197,179,88,1)", "0px 5px 20px rgba(197,179,88,0.5)"] }}
+              transition={{ delay: 0, duration: 3, repeat: Infinity, repeatType: "reverse" }}
+              className="w-24 h-1 bg-gradient-to-r from-transparent via-vanguardGold to-transparent mt-6 opacity-70"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+            {[
+              { 
+                icon: <Cpu size={32} />, 
+                title: 'Design & Engineering', 
+                desc: 'Pre-sales configuration and architectural mapping ensuring mission-fit technology before acquisition.',
+                drilldowns: [
+                  { title: "ISO/IEC 27701 & NIST Privacy Framework", desc: "Privacy-by-design embedded in all technical blueprints." },
+                  { title: "Zero Trust Alignment", desc: "Strict adherence to modern identity and access management." },
+                  { title: "Cloud-Native Architecture", desc: "Scalable and resilient infrastructure design for federal workloads." },
+                  { title: "DevSecOps Integration", desc: "Automated security testing embedded within the development lifecycle." }
+                ]
+              },
+              { 
+                icon: <ShieldCheck size={32} />, 
+                title: 'Secure Supply Chain', 
+                desc: 'Strict adherence to NIST 800-171 and CMMC compliance frameworks for hardware logistics.',
+                drilldowns: [
+                  { title: "DFARS 252.204-7012 Compliance", desc: "Advanced persistent threat protection in transit." },
+                  { title: "NIST 800-171 Controls", desc: "Comprehensive safeguarding of Controlled Unclassified Information (CUI)." },
+                  { title: "Hardware Provenance Tracking", desc: "End-to-end visibility and chain of custody for all procured assets." },
+                  { title: "Anti-Counterfeit Protocols", desc: "Rigorous inspection and verification to prevent malicious hardware insertion." }
+                ]
+              },
+              { 
+                icon: <Server size={32} />, 
+                title: 'Lifecycle Management', 
+                desc: 'Post-award integration, asset tagging, warranty management, and secure end-of-life disposal.',
+                drilldowns: [
+                  { title: "U.S. Privacy Act & HIPAA/HITECH Standards", desc: "Legal adherence to federal data privacy regulations." },
+                  { title: "Secure Data Destruction", desc: "DoD-compliant wiping and physical destruction protocols." },
+                  { title: "Asset Tagging & Tracking", desc: "Automated inventory management and real-time asset visibility." },
+                  { title: "Warranty & Maintenance Logistics", desc: "Streamlined support and hardware replacement workflows." }
+                ]
+              },
+              { 
+                icon: <Database size={32} />, 
+                title: 'Sourcing & Hardware', 
+                desc: 'Information regarding the acquisition of hardware and software through authorized channels.',
+                drilldowns: [
+                  { title: "Trade Agreements Act (TAA)", desc: "Hardware sourcing is subject to TAA compliance requirements." },
+                  { title: "Supply Chain Risk Management", desc: "Procurement adheres to established counterfeit prevention guidelines." },
+                  { title: "OEM Authorized Reseller Network", desc: "Direct partnerships with leading technology manufacturers." },
+                  { title: "Rapid Acquisition Framework", desc: "Agile procurement processes for time-sensitive mission requirements." }
+                ]
+              },
+              { 
+                icon: <FileText size={32} />, 
+                title: 'Audit & Online Services', 
+                desc: 'Information regarding system auditing and the provisioning of online cloud services.',
+                drilldowns: [
+                  { title: "FISMA Framework", desc: "Audits are conducted in alignment with the Federal Information Security Modernization Act." },
+                  { title: "FedRAMP Standards", desc: "Online services utilize FedRAMP-authorized cloud environments." },
+                  { title: "Continuous Diagnostics & Mitigation", desc: "Real-time monitoring and automated risk scoring." },
+                  { title: "Vulnerability Assessment", desc: "Comprehensive penetration testing and security posture evaluation." }
+                ]
+              },
+              { 
+                icon: <Network size={32} />, 
+                title: 'System Integrations', 
+                desc: 'Information regarding the integration of enterprise IT systems within federal networks.',
+                drilldowns: [
+                  { title: "ServiceNow", desc: "IT service management (ITSM) and operations management integration." },
+                  { title: "Splunk", desc: "Security information and event management (SIEM) deployment." },
+                  { title: "Cisco ISE", desc: "Network access control and identity management integration." },
+                  { title: "Palo Alto Networks", desc: "Next-generation firewall and zero-trust network access implementation." }
+                ]
+              }
+            ].map((item, index) => (
+              <div key={index} className="flex flex-col items-center relative">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ delay: index * 0.2, duration: 0.5 }}
+                  className="bg-gradient-to-br from-slate-200/10 via-white/5 to-transparent backdrop-blur-md border border-white/10 p-10 rounded-3xl hover:from-slate-200/15 hover:via-white/10 hover:border-white/20 transition-all duration-500 group relative overflow-hidden flex flex-col items-center text-center shadow-[0_8px_30px_rgba(0,0,0,0.2)] w-full z-10"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <h3 className="text-2xl font-bold mb-4 relative z-10 text-white tracking-wide drop-shadow-md">{item.title}</h3>
+                  <p className="text-gray-300 text-base leading-relaxed relative z-10 font-medium drop-shadow-sm">{item.desc}</p>
+                </motion.div>
+
+                {/* SVG Connecting Lines & Drilldowns */}
+                <div className="relative w-full flex flex-col items-center mt-4">
+                  {item.drilldowns.map((drill, idx) => (
+                    <motion.div 
+                      key={idx} 
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true, margin: "-50px" }}
+                      variants={{
+                        hidden: { opacity: 0, y: 10 },
+                        visible: { 
+                          opacity: 1, 
+                          y: 0,
+                          transition: { duration: 0.4, delay: index * 0.2 + idx * 0.2 }
+                        }
+                      }}
+                      className="flex flex-col items-center w-full"
+                    >
+                      {/* Connecting line for this specific box */}
+                      <svg className="w-4 h-8 pointer-events-none">
+                        <motion.line 
+                          x1="50%" y1="0" x2="50%" y2="100%" 
+                          stroke="#C5B358" strokeWidth="2" strokeDasharray="4 4"
+                          variants={{
+                            hidden: { pathLength: 0, opacity: 0 },
+                            visible: { 
+                              pathLength: 1, 
+                              opacity: 0.4, 
+                              transition: { duration: 0.4, delay: index * 0.2 + idx * 0.2 } 
+                            }
+                          }}
+                        />
+                      </svg>
+                      <div className="bg-gradient-to-br from-slate-200/5 to-transparent backdrop-blur-sm border border-white/10 p-5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.2)] text-center relative w-full">
+                        <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-vanguardGold shadow-[0_0_10px_rgba(197,179,88,1)]" />
+                        <h4 className="text-vanguardGold font-bold text-sm mb-2">{drill.title}</h4>
+                        <p className="text-gray-300 text-xs leading-relaxed">{drill.desc}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+              </motion.div>
+            )}
+
+            {currentPage === 'about' && (
+              <motion.div 
+                key="about"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col w-full flex-grow"
+              >
+                {/* SECTION 4: VETERAN IMPACT STORY */}
+                <section id="about" className="py-24 max-w-7xl mx-auto px-6 w-full relative">
+          {/* Background Truck for About Page */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none mix-blend-overlay z-0">
+            <Truck size={600} strokeWidth={0.5} className="text-slate-300" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
+            <motion.div 
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7 }}
+              className="relative h-[400px] md:h-[500px] rounded-xl overflow-hidden group flex items-center justify-center p-8 bg-transparent"
+            >
+              <FixLogo />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+            >
+              <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">Built on a Foundation of Service.</h2>
+              <p className="text-slate-200 mb-6 leading-relaxed text-lg">
+                As a Minority and Service-Disabled Veteran-Owned Small Business.. F.I.X (Federal Integration & eXchange) Solutions LLC operates with precision, integrity, and urgency. We understand that in the public sector, technology failure is not an option.
+              </p>
+              <p className="text-slate-200 mb-10 leading-relaxed text-lg">
+                We implement OEM technologies and adhere to federal compliance standards, ensuring preparation, security, and readiness for operational challenges.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-8 border-t border-glassBorder pt-8">
+                <div className="flex flex-col">
+                  <span className="text-4xl md:text-5xl font-bold text-white mb-2">100%</span>
+                  <span className="text-xs font-mono text-vanguardGold tracking-widest">MISSION FOCUS</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-4xl md:text-5xl font-bold text-white mb-2">Zero</span>
+                  <span className="text-xs font-mono text-vanguardGold tracking-widest">COMPLIANCE RISKS</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Map Container Moved to About Section */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="mt-24"
+          >
+            <div className="w-full h-[400px] md:h-[500px] rounded-2xl overflow-hidden border-2 border-blue-900/40 shadow-[0_0_50px_rgba(30,58,138,0.2)] relative z-10 bg-tacticalSlate/20 opacity-65 hover:opacity-100 transition-opacity duration-700 ease-in-out ring-1 ring-white/10">
+              <div className="absolute top-6 left-16 z-[1000] pointer-events-none">
+                <span className="font-cursive text-3xl text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.8)] opacity-90">DMV</span>
+              </div>
+              <MapContainer 
+                center={[38.8951, -77.0364]} 
+                zoom={9} 
+                scrollWheelZoom={false} 
+                style={{ height: '100%', width: '100%', zIndex: 1, background: '#0B1426' }}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                />
+                <Marker position={[38.8951, -77.0364]} icon={tacticalIcon}>
+                  <Popup className="tactical-popup">
+                    <div className="bg-missionNavy text-white p-3 rounded-lg border border-vanguardGold/30 shadow-xl min-w-[200px]">
+                      <h4 className="font-bold text-vanguardGold mb-1 text-sm tracking-wider uppercase">F.I.X HQ</h4>
+                      <p className="text-xs text-gray-200">Washington D.C. Metro Area</p>
+                    </div>
+                  </Popup>
+                </Marker>
+
+                {/* Animated Shipping Trucks */}
+                <AnimatedTruckMarker start={[38.8951, -77.0364]} end={[39.2904, -76.6122]} duration={20000} delay={0} />
+                <AnimatedTruckMarker start={[38.8951, -77.0364]} end={[38.9531, -77.4565]} duration={16000} delay={5000} />
+                <AnimatedTruckMarker start={[38.8951, -77.0364]} end={[38.9784, -76.4922]} duration={24000} delay={2000} />
+                <AnimatedTruckMarker start={[38.8951, -77.0364]} end={[38.3004, -77.4663]} duration={28000} delay={8000} />
+
+              </MapContainer>
+              
+              {/* Overlay gradient to blend map edges into theme */}
+              <div className="absolute inset-0 pointer-events-none border-2 border-blue-900/30 rounded-2xl shadow-[inset_0_0_80px_rgba(11,20,38,1)] z-[2]" />
+            </div>
+          </motion.div>
+        </section>
+              </motion.div>
+            )}
+
+            {currentPage === 'quote' && (
+              <motion.div 
+                key="quote"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col w-full flex-grow"
+              >
+                {/* SECTION 5: SECURE QUOTE REQUEST */}
+                <section id="quote" className="py-24 bg-tacticalSlate/30 w-full border-t border-glassBorder relative overflow-hidden flex-grow">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-full bg-vanguardGold/5 blur-[120px] rounded-full pointer-events-none" />
+          
+          <div className="max-w-3xl mx-auto px-6 relative z-10">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Request a Secure Quote</h2>
+              <p className="text-slate-200">Submit your requirements for a rapid, compliant response.</p>
+            </div>
+
+            <form className="bg-glassBg backdrop-blur-md border border-glassBorder p-8 rounded-xl shadow-2xl" onSubmit={handleQuoteSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="block text-xs font-mono text-slate-200 mb-2 uppercase">Agency / Organization</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={quoteForm.agency}
+                    onChange={(e) => setQuoteForm({...quoteForm, agency: e.target.value})}
+                    className="w-full bg-missionNavy/50 border border-glassBorder rounded-md px-4 py-3 text-white focus:outline-none focus:border-vanguardGold transition-colors" 
+                    placeholder="e.g. Dept of Defense" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-mono text-slate-200 mb-2 uppercase">Contact Email</label>
+                  <input 
+                    type="email" 
+                    required
+                    value={quoteForm.email}
+                    onChange={(e) => setQuoteForm({...quoteForm, email: e.target.value})}
+                    className="w-full bg-missionNavy/50 border border-glassBorder rounded-md px-4 py-3 text-white focus:outline-none focus:border-vanguardGold transition-colors" 
+                    placeholder="official@agency.gov" 
+                  />
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <label className="block text-xs font-mono text-slate-200 mb-2 uppercase">Target NAICS / Vehicle (Optional)</label>
+                <input 
+                  type="text" 
+                  value={quoteForm.naics}
+                  onChange={(e) => setQuoteForm({...quoteForm, naics: e.target.value})}
+                  className="w-full bg-missionNavy/50 border border-glassBorder rounded-md px-4 py-3 text-white focus:outline-none focus:border-vanguardGold transition-colors" 
+                  placeholder="e.g. 541519 or SEWP VI" 
+                />
+              </div>
+
+              <div className="mb-8">
+                <label className="block text-xs font-mono text-slate-200 mb-2 uppercase">Requirements</label>
+                <textarea 
+                  rows={4} 
+                  required
+                  value={quoteForm.requirements}
+                  onChange={(e) => setQuoteForm({...quoteForm, requirements: e.target.value})}
+                  className="w-full bg-missionNavy/50 border border-glassBorder rounded-md px-4 py-3 text-white focus:outline-none focus:border-vanguardGold transition-colors resize-none" 
+                  placeholder="Describe your technical requirements..." 
+                />
+              </div>
+
+              <button type="submit" className="w-full bg-vanguardGold text-missionNavy font-bold py-4 rounded-md hover:bg-yellow-500 transition-colors flex items-center justify-center">
+                Submit Request <ChevronRight size={20} className="ml-2" />
+              </button>
+              <p className="text-center text-xs text-slate-300 mt-4 font-mono">Transmissions are secured and monitored.</p>
+            </form>
+          </div>
+        </section>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+
+        {/* FOOTER */}
+      <footer className="bg-missionNavy border-t border-glassBorder py-12">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+          <div className="col-span-1">
+            <div className="flex items-center space-x-3 mb-4">
+              <FixLogo className="w-12 h-12" />
+              <div className="flex flex-col">
+                <span className="font-bold text-lg tracking-tight leading-none">F.I.X SOLUTIONS LLC</span>
+                <span className="text-[10px] font-mono text-vanguardGold tracking-widest uppercase mt-1">Federal Integration & eXchange</span>
+              </div>
+            </div>
+            <p className="text-slate-200 text-sm max-w-sm">
+              Engineering the future of government procurement. A certified Service-Disabled Veteran-Owned Small Business delivering fulfillment.
+            </p>
+          </div>
+          
+          <div className="col-span-1 flex flex-col items-center justify-center py-6 md:py-0 border-y md:border-none border-glassBorder/20">
+            <div className="relative group bg-glassBg/40 backdrop-blur-md border border-glassBorder/30 p-4 rounded-lg flex items-center space-x-6 shadow-xl">
+              <div className="absolute inset-0 bg-gradient-to-r from-vanguardGold/0 via-vanguardGold/5 to-vanguardGold/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-lg pointer-events-none" />
+              <USFlag variant="standard" className="h-8 md:h-10 w-auto rounded-[2px] shadow-lg border border-white/10 transition-transform duration-300 group-hover:scale-105" />
+              <div className="h-4 w-[1px] bg-glassBorder/50" />
+              <USFlag variant="tactical" className="h-8 md:h-10 w-auto rounded-[2px] shadow-lg border border-white/5 opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105" />
+            </div>
+          </div>
+          
+          <div className="col-span-1 flex flex-col items-center md:items-end text-center md:text-right">
+            <div>
+              <h4 className="text-white font-semibold mb-4 text-left md:text-right">Quick Links</h4>
+              <ul className="space-y-2 text-sm text-slate-200 text-left md:text-right">
+                <li><button onClick={() => setCurrentPage('expertise')} className="hover:text-vanguardGold transition-colors text-left md:text-end w-full">Expertise</button></li>
+                <li><button onClick={() => setCurrentPage('about')} className="hover:text-vanguardGold transition-colors text-left md:text-end w-full">About Us</button></li>
+                <li><button onClick={() => setIsPortalModalOpen(true)} className="text-vanguardGold font-semibold hover:underline transition-colors text-left md:text-end w-full">Partner Portal Login</button></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-6 mt-12 pt-8 border-t border-glassBorder text-center md:text-left text-xs text-slate-300 flex flex-col md:flex-row justify-between items-center">
+          <p>&copy; {new Date().getFullYear()} F.I.X Solutions LLC. All rights reserved.</p>
+          <div className="mt-4 md:mt-0 space-x-4">
+            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-white transition-colors">Accessibility</a>
+          </div>
+        </div>
+      </footer>
+      
+      <CapabilityStatementModal 
+        isOpen={isCapabilityModalOpen} 
+        onClose={() => setIsCapabilityModalOpen(false)} 
+      />
+      <ClientPortalModal
+        isOpen={isPortalModalOpen}
+        onClose={() => setIsPortalModalOpen(false)}
+      />
+      </div>
+    </div>
+  );
+}
