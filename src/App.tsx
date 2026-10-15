@@ -81,227 +81,283 @@ const RadialDockItem = ({ label, icon: Icon, onClick, active, x, y, index }: any
   </motion.button>
 );
 
-const allNewsItems = [
-  { 
-    source: "Defense.gov", 
-    title: "DoD Finalizes CMMC 2.0 Framework for Defense Contractors", 
-    time: "10 mins ago",
-    agency: "Dept. of Defense",
-    value: "Policy",
-    dueDate: "Q1 2027",
-    status: "Alert",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("DoD Finalizes CMMC 2.0 Framework for Defense Contractors technology defense procurement")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.defense.gov/News/Releases/Release/Article/3624332/dod-publishes-cmmc-20-proposed-rule/"
-  },
-  { 
-    source: "GSA.gov", 
-    title: "Next-Gen IT Services GWAC Opens for Small Business Bids", 
-    time: "1 hour ago",
-    agency: "GSA",
-    value: "$50B Ceiling",
-    dueDate: "Nov 01, 2026",
-    status: "Solicitation",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Next-Gen IT Services GWAC Opens for Small Business Bids technology defense procurement")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.gsa.gov/about-us/newsroom"
-  },
-  { 
-    source: "Defense.gov", 
-    title: "AI-Driven Logistics Network Expansion: Secure Supply Chain RFP", 
-    time: "3 hours ago",
-    agency: "Defense Logistics",
-    value: "$2.5B",
-    dueDate: "Dec 15, 2026",
-    status: "Pre-RFP",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Logistics Network Expansion: Secure Supply Chain RFP technology defense procurement")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.dla.mil/About-DLA/News/"
-  },
-  { 
-    source: "SAM.gov", 
-    title: "Enterprise Server Infrastructure Refresh Phase III", 
-    time: "5 hours ago",
-    agency: "Dept. of Energy",
-    value: "$450M",
-    dueDate: "Oct 30, 2026",
-    status: "Active",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Enterprise Server Infrastructure Refresh Phase III technology defense procurement")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://sam.gov/search"
-  },
-  { 
-    source: "CISA.gov", 
-    title: "Zero Trust Architecture Implementation Mandate Expanded", 
-    time: "6 hours ago",
-    agency: "Cybersecurity & Infrastructure",
-    value: "Directive",
-    dueDate: "Jan 15, 2027",
-    status: "Mandate",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Zero Trust Architecture Implementation Mandate Expanded cybersecurity")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.cisa.gov/news-events"
-  },
-  { 
-    source: "Defense.gov", 
-    title: "Joint Warfighting Cloud Capability (JWCC) Task Orders Issued", 
-    time: "1 day ago",
-    agency: "Dept. of Defense",
-    value: "$9B Ceiling",
-    dueDate: "Rolling",
-    status: "Awarded",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Joint Warfighting Cloud Capability JWCC Task Orders Issued technology defense")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.defense.gov/News/"
-  },
-  { 
-    source: "VA.gov", 
-    title: "Veterans Health Information Systems Modernization", 
-    time: "1 day ago",
-    agency: "Dept. of Veterans Affairs",
-    value: "$1.2B",
-    dueDate: "Feb 28, 2027",
-    status: "Active",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Veterans Health Information Systems Modernization healthcare IT")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.va.gov/opa/pressrel/"
-  },
-  { 
-    source: "DHS.gov", 
-    title: "Border Security Advanced Surveillance Tech Procurement", 
-    time: "2 days ago",
-    agency: "Dept. of Homeland Security",
-    value: "$350M",
-    dueDate: "Apr 05, 2027",
-    status: "Pre-RFP",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Border Security Advanced Surveillance Tech Procurement defense")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1555820585-c5ae44394b79?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.dhs.gov/news-releases"
-  },
-  { 
-    source: "NASA.gov", 
-    title: "Artemis Program Lunar Surface Communications Network", 
-    time: "2 days ago",
-    agency: "NASA",
-    value: "$800M",
-    dueDate: "May 12, 2027",
-    status: "Solicitation",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Artemis Program Lunar Surface Communications Network space technology")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.nasa.gov/news"
-  },
-  { 
-    source: "Treasury.gov", 
-    title: "Federal Financial Systems Modernization Initiative", 
-    time: "3 days ago",
-    agency: "Dept. of Treasury",
-    value: "$600M",
-    dueDate: "Jun 20, 2027",
-    status: "Active",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Federal Financial Systems Modernization Initiative finance technology")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://home.treasury.gov/news"
-  },
-  { 
-    source: "FBI.gov", 
-    title: "Next-Generation Biometric Identification System Upgrade", 
-    time: "4 days ago",
-    agency: "Federal Bureau of Investigation",
-    value: "$420M",
-    dueDate: "Jul 15, 2027",
-    status: "Pre-RFP",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Next-Generation Biometric Identification System Upgrade cybersecurity")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1507146426996-ef05306b995a?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.fbi.gov/news"
-  },
-  { 
-    source: "Commerce.gov", 
-    title: "Secure 5G Network Infrastructure Deployment Grants", 
-    time: "5 days ago",
-    agency: "Dept. of Commerce",
-    value: "$1.5B",
-    dueDate: "Aug 01, 2027",
-    status: "Solicitation",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Secure 5G Network Infrastructure Deployment Grants telecommunications")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.commerce.gov/news"
-  },
-  { 
-    source: "FAA.gov", 
-    title: "National Airspace System Air Traffic Control Modernization", 
-    time: "1 week ago",
-    agency: "Federal Aviation Admin",
-    value: "$2.1B",
-    dueDate: "Sep 10, 2027",
-    status: "Active",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("National Airspace System Air Traffic Control Modernization aviation technology")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.faa.gov/newsroom"
-  },
-  { 
-    source: "HHS.gov", 
-    title: "National Pandemic Early Warning Data Network", 
-    time: "1 week ago",
-    agency: "Health & Human Services",
-    value: "$850M",
-    dueDate: "Oct 25, 2027",
-    status: "Pre-RFP",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("National Pandemic Early Warning Data Network healthcare analytics")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.hhs.gov/about/news/index.html"
-  },
-  { 
-    source: "NSF.gov", 
-    title: "Quantum Computing Research Initiative Supercomputer Acquisition", 
-    time: "2 weeks ago",
-    agency: "National Science Foundation",
-    value: "$300M",
-    dueDate: "Nov 15, 2027",
-    status: "Solicitation",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Quantum Computing Research Initiative Supercomputer Acquisition science technology")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://www.nsf.gov/news/"
-  },
-  { 
-    source: "USPS.com", 
-    title: "Next Generation Delivery Vehicle Fleet Telematics System", 
-    time: "2 weeks ago",
-    agency: "U.S. Postal Service",
-    value: "$550M",
-    dueDate: "Dec 05, 2027",
-    status: "Active",
-    image: `https://image.pollinations.ai/prompt/${encodeURIComponent("Next Generation Delivery Vehicle Fleet Telematics System logistics technology")}?width=600&height=400&nologo=true`,
-    fallbackImage: "https://images.unsplash.com/photo-1580674285054-bed31e145f59?auto=format&fit=crop&q=80&w=600&h=400",
-    url: "https://about.usps.com/newsroom/"
-  }
+interface LiveNewsItem {
+  id: string;
+  source: string;
+  sourceCode: string;
+  accentColor: string;
+  title: string;
+  summary: string;
+  time: string;
+  pubTimestamp: number;
+  agency: string;
+  track: string;
+  status: string;
+  url: string;
+  isKeyStory?: boolean;
+}
+
+const LIVE_RSS_FEEDS = [
+  { url: 'https://federalnewsnetwork.com/feed/', source: 'Federal News Network', code: 'FNN', accent: '#38bdf8' },
+  { url: 'https://defensescoop.com/feed/', source: 'DefenseScoop', code: 'DSCOOP', accent: '#C5B358' },
+  { url: 'https://www.cisa.gov/cybersecurity-advisories/all.xml', source: 'CISA Advisories', code: 'CISA', accent: '#f87171' },
+  { url: 'https://www.nextgov.com/rss/all/', source: 'Nextgov / FCW', code: 'NXTGOV', accent: '#34d399' },
+  { url: 'https://breakingdefense.com/feed/', source: 'Breaking Defense', code: 'BRKDEF', accent: '#a78bfa' },
 ];
+
+const FALLBACK_LIVE_ITEMS: LiveNewsItem[] = [
+  {
+    id: 'seed-1',
+    source: 'Federal News Network',
+    sourceCode: 'FNN',
+    accentColor: '#38bdf8',
+    title: 'Army Launches Project Gatekeeper to Accelerate Tactical Software Approvals',
+    summary: 'New continuous authority-to-operate pipeline cuts weapon and enterprise software accreditation timelines.',
+    time: 'LIVE • TODAY',
+    pubTimestamp: Date.now() - 1800 * 1000,
+    agency: 'U.S. Army / DoD',
+    track: '541519 • SW / CLOUD',
+    status: 'KEY BRIEFING',
+    url: 'https://federalnewsnetwork.com/',
+    isKeyStory: true,
+  },
+  {
+    id: 'seed-2',
+    source: 'CISA Advisories',
+    sourceCode: 'CISA',
+    accentColor: '#f87171',
+    title: 'CISA Adds Known Exploited Vulnerabilities to Federal Remediation Catalog',
+    summary: 'Binding Operational Directive 22-01 mandates rapid patching across federal civilian executive branch networks.',
+    time: 'LIVE • TODAY',
+    pubTimestamp: Date.now() - 3600 * 1000,
+    agency: 'DHS / CISA',
+    track: '541512 • ZERO TRUST',
+    status: 'CYBER ALERT',
+    url: 'https://www.cisa.gov/cybersecurity-advisories/all.xml',
+    isKeyStory: true,
+  },
+  {
+    id: 'seed-3',
+    source: 'DefenseScoop',
+    sourceCode: 'DSCOOP',
+    accentColor: '#C5B358',
+    title: 'Pentagon Expands Space Operations & Tactical SATCOM Acquisition Architecture',
+    summary: 'Combatant commands prioritize resilient commercial and defense satellite integration across theater networks.',
+    time: 'LIVE • 2h ago',
+    pubTimestamp: Date.now() - 7200 * 1000,
+    agency: 'DoD / Space Ops',
+    track: '334220 • SATCOM',
+    status: 'ACQUISITION',
+    url: 'https://defensescoop.com/',
+    isKeyStory: false,
+  },
+  {
+    id: 'seed-4',
+    source: 'Nextgov / FCW',
+    sourceCode: 'NXTGOV',
+    accentColor: '#34d399',
+    title: 'Federal Agencies Spearhead Enterprise AI & Cloud Modernization Directives',
+    summary: 'OMB and GSA acquisition vehicles streamline small-business VAR participation in high-security AI workloads.',
+    time: 'LIVE • 3h ago',
+    pubTimestamp: Date.now() - 10800 * 1000,
+    agency: 'OMB / GSA',
+    track: '541519 • AI / IT VAR',
+    status: 'MODERNIZATION',
+    url: 'https://www.nextgov.com/',
+    isKeyStory: true,
+  },
+  {
+    id: 'seed-5',
+    source: 'Breaking Defense',
+    sourceCode: 'BRKDEF',
+    accentColor: '#a78bfa',
+    title: 'Autonomous Systems & Secure Supply Chain Resilience Top Defense Priorities',
+    summary: 'NIST 800-171 and CMMC 2.0 compliance enforced across prime and sub-tier hardware procurement.',
+    time: 'LIVE • 4h ago',
+    pubTimestamp: Date.now() - 14400 * 1000,
+    agency: 'Pentagon / DLA',
+    track: '334111 • CMMC L2',
+    status: 'POLICY',
+    url: 'https://breakingdefense.com/',
+    isKeyStory: false,
+  },
+];
+
+const stripHtmlText = (raw: string = '') =>
+  raw
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#8217;|&rsquo;/gi, "'")
+    .replace(/&#8220;|&#8221;/gi, '"')
+    .replace(/&#8211;|&#8212;/gi, '—')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const formatRelativeTime = (pubDateStr: string) => {
+  const parsed = Date.parse(pubDateStr.replace(' ', 'T') + (pubDateStr.includes('Z') ? '' : 'Z'));
+  if (isNaN(parsed)) return 'LIVE • TODAY';
+  const diffMins = Math.max(1, Math.floor((Date.now() - parsed) / 60000));
+  if (diffMins < 60) return `LIVE • ${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `LIVE • ${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+};
+
+const inferProcurementMetadata = (title: string, sourceCode: string) => {
+  const t = title.toLowerCase();
+  let agency = 'Federal / DoD';
+  if (t.includes('army') || t.includes('ausa')) agency = 'U.S. Army';
+  else if (t.includes('navy') || t.includes('marine')) agency = 'U.S. Navy';
+  else if (t.includes('air force') || t.includes('space')) agency = 'USAF / Space Force';
+  else if (t.includes('cisa') || t.includes('vulnerabilit') || t.includes('cyber')) agency = 'DHS / CISA';
+  else if (t.includes('va ') || t.includes('veteran')) agency = 'Dept. of VA';
+  else if (t.includes('gsa') || t.includes('opm') || t.includes('workforce')) agency = 'GSA / OPM';
+  else if (t.includes('pentagon') || t.includes('dod') || t.includes('hegseth') || t.includes('defense')) agency = 'Pentagon / DoD';
+
+  let track = '541519 • IT VAR';
+  let status = 'INTEL BRIEF';
+  if (t.includes('cyber') || t.includes('vulnerabilit') || t.includes('zero trust') || sourceCode === 'CISA') {
+    track = '541512 • CYBER';
+    status = 'CYBER ALERT';
+  } else if (t.includes('ai') || t.includes('software') || t.includes('cloud') || t.includes('data')) {
+    track = '541519 • AI / CLOUD';
+    status = 'TECH OPS';
+  } else if (t.includes('contract') || t.includes('award') || t.includes('rfp') || t.includes('procurement') || t.includes('budget')) {
+    track = '334111 • ACQUISITION';
+    status = 'PROCUREMENT';
+  } else if (t.includes('space') || t.includes('autonom') || t.includes('drone') || t.includes('weapon')) {
+    track = '334220 • DEFENSE';
+    status = 'TACTICAL';
+  }
+
+  // Score for "Key News of the Day" (pinned for the day like Google News Top Stories)
+  let score = 0;
+  const highValueTerms = ['army', 'dod', 'pentagon', 'cisa', 'cyber', 'ai', 'software', 'cloud', 'contract', 'billion', 'million', 'space', 'autonom', 'moderniz', 'zero trust', 'cmmc'];
+  highValueTerms.forEach((term) => {
+    if (t.includes(term)) score += 2;
+  });
+  if (sourceCode === 'CISA' || sourceCode === 'FNN' || sourceCode === 'DSCOOP') score += 1;
+
+  return { agency, track, status, score };
+};
 
 const ProcurementNews = () => {
   const [countdown, setCountdown] = useState(60);
-  const [rotationIndex, setRotationIndex] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [hoveredCard, setHoveredCard] = useState<{item: any, index: number, rect: DOMRect} | null>(null);
+  const [newsItems, setNewsItems] = useState<LiveNewsItem[]>(FALLBACK_LIVE_ITEMS);
+  const [hoveredCard, setHoveredCard] = useState<{ item: LiveNewsItem; index: number; rect: DOMRect } | null>(null);
+
+  const fetchLiveRSSFeeds = React.useCallback(async () => {
+    const todayKey = `fix_daily_key_news_${new Date().toISOString().slice(0, 10)}`;
+    let pinnedTodayIds: string[] = [];
+    try {
+      const saved = localStorage.getItem(todayKey);
+      if (saved) pinnedTodayIds = JSON.parse(saved);
+    } catch {
+      // ignore storage errors
+    }
+
+    try {
+      const results = await Promise.allSettled(
+        LIVE_RSS_FEEDS.map(async (feed) => {
+          const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`);
+          const data = await res.json();
+          if (data.status !== 'ok' || !Array.isArray(data.items)) return [];
+          return data.items.slice(0, 5).map((entry: any, idx: number) => {
+            const cleanTitle = stripHtmlText(entry.title || 'Federal Procurement & Defense Briefing');
+            const cleanSummary = stripHtmlText(entry.description || entry.content || '') || 'Live federal acquisition, defense technology, and cybersecurity intelligence dispatch.';
+            const meta = inferProcurementMetadata(cleanTitle, feed.code);
+            const pubTimestamp = Date.parse((entry.pubDate || '').replace(' ', 'T')) || Date.now() - idx * 600000;
+            const id = entry.guid || entry.link || `${feed.code}-${idx}`;
+            return {
+              id,
+              source: feed.source,
+              sourceCode: feed.code,
+              accentColor: feed.accent,
+              title: cleanTitle,
+              summary: cleanSummary.slice(0, 130),
+              time: formatRelativeTime(entry.pubDate || ''),
+              pubTimestamp,
+              agency: meta.agency,
+              track: meta.track,
+              status: meta.status,
+              url: entry.link || feed.url,
+              _score: meta.score,
+            };
+          });
+        })
+      );
+
+      const merged = results
+        .filter((r): r is PromiseFulfilledResult<any[]> => r.status === 'fulfilled')
+        .flatMap((r) => r.value);
+
+      if (merged.length > 0) {
+        // Sort newest first
+        merged.sort((a, b) => b.pubTimestamp - a.pubTimestamp);
+
+        // Determine Key Stories of the Day (persisted for today like Google News Top Stories)
+        if (pinnedTodayIds.length === 0) {
+          const topByScore = [...merged]
+            .sort((a, b) => b._score - a._score || b.pubTimestamp - a.pubTimestamp)
+            .slice(0, 5)
+            .map((item) => item.id);
+          pinnedTodayIds = topByScore;
+          try {
+            localStorage.setItem(todayKey, JSON.stringify(pinnedTodayIds));
+          } catch {
+            // ignore storage errors
+          }
+        }
+
+        const tagged: LiveNewsItem[] = merged.map((item) => ({
+          ...item,
+          isKeyStory: pinnedTodayIds.includes(item.id),
+        }));
+
+        // Interleave Key Stories at the front & evenly across the stream so key daily news stays prominent all day
+        const keyStories = tagged.filter((t) => t.isKeyStory);
+        const regularStories = tagged.filter((t) => !t.isKeyStory);
+        const finalStream: LiveNewsItem[] = [];
+        let kIdx = 0;
+        let rIdx = 0;
+        while (kIdx < keyStories.length || rIdx < regularStories.length) {
+          if (kIdx < keyStories.length) finalStream.push(keyStories[kIdx++]);
+          if (rIdx < regularStories.length) finalStream.push(regularStories[rIdx++]);
+          if (rIdx < regularStories.length) finalStream.push(regularStories[rIdx++]);
+        }
+
+        setNewsItems(finalStream.slice(0, 18));
+      }
+    } catch {
+      // Keep fallback live items if offline
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchLiveRSSFeeds();
+  }, [fetchLiveRSSFeeds]);
 
   React.useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           setIsRefreshing(true);
+          fetchLiveRSSFeeds();
           setTimeout(() => setIsRefreshing(false), 1500);
-          setRotationIndex((r) => (r + 1) % allNewsItems.length);
           return 60;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
-
-  // Ensure we use all 16 items to prevent repeating too often
-  const newsItems = allNewsItems;
+  }, [fetchLiveRSSFeeds]);
 
   return (
-    <section id="procurement-news" className="w-full bg-transparent border-b border-glassBorder pt-16 pb-32 mt-32 mb-32 relative overflow-hidden">
+    <section id="procurement-news" className="w-full bg-transparent border-b border-glassBorder pt-12 pb-20 mt-24 mb-24 relative overflow-hidden">
       {/* Subtle background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-full bg-vanguardGold/5 blur-[120px] pointer-events-none" />
       
@@ -342,14 +398,14 @@ const ProcurementNews = () => {
         )}
       </AnimatePresence>
 
-      {/* Hovered Card Portal/Overlay */}
+      {/* Hovered Card Portal/Overlay (Compact NBA-RSS Broadcast Style) */}
       <AnimatePresence>
         {hoveredCard && (
           <motion.div
             key={hoveredCard.index}
             initial={{ opacity: 0, scale: 1, y: 0 }}
-            animate={{ opacity: 1, scale: 1.05, y: -10 }}
-            exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}
+            animate={{ opacity: 1, scale: 1.06, y: -8 }}
+            exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.1 } }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             style={{
               position: 'fixed',
@@ -361,46 +417,69 @@ const ProcurementNews = () => {
             }}
             onMouseLeave={() => setHoveredCard(null)}
             onClick={() => window.open(hoveredCard.item.url, '_blank', 'noopener,noreferrer')}
-            className="flex flex-col bg-[#0B1426] border-l border-t border-white/30 border-r border-b border-black/80 rounded-tl-3xl rounded-br-3xl rounded-tr-sm rounded-bl-sm overflow-hidden cursor-pointer shadow-[0_30px_60px_-10px_rgba(0,0,0,0.9),0_0_40px_rgba(255,255,255,0.1)] -skew-x-6"
+            className={`flex flex-col bg-[#081020] rounded-tl-2xl rounded-br-2xl rounded-tr-sm rounded-bl-sm overflow-hidden cursor-pointer -skew-x-6 ${
+              hoveredCard.item.isKeyStory
+                ? 'border-2 border-vanguardGold shadow-[0_25px_55px_rgba(0,0,0,0.95),0_0_35px_rgba(197,179,88,0.4)]'
+                : 'border border-vanguardGold/60 shadow-[0_25px_55px_rgba(0,0,0,0.95),0_0_25px_rgba(255,255,255,0.12)]'
+            }`}
           >
-            <div className="absolute inset-0 bg-gradient-to-tr from-slate-200/15 via-white/5 to-transparent pointer-events-none" />
-            <div className="flex flex-col h-full w-full skew-x-6">
-              <div className="relative h-48 w-full overflow-hidden shrink-0 rounded-tl-3xl rounded-tr-sm">
-                <img 
-                  src={hoveredCard.item.image} 
-                  alt={hoveredCard.item.title} 
-                  className="w-full h-full object-cover scale-110" 
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = hoveredCard.item.fallbackImage;
-                  }}
-                />
-                <div className="absolute top-4 right-4 z-20 flex items-center space-x-2">
-                  <span className="text-[10px] font-bold uppercase text-missionNavy bg-vanguardGold px-2 py-1 rounded shadow-sm">{hoveredCard.item.source}</span>
-                  <span className="text-[10px] font-bold uppercase text-white bg-red-600/90 backdrop-blur-sm px-2 py-1 rounded shadow-sm">{hoveredCard.item.status}</span>
+            {/* Top accent bar */}
+            <div
+              className="h-1 w-full shrink-0"
+              style={{
+                background: hoveredCard.item.isKeyStory
+                  ? 'linear-gradient(90deg, #C5B358, #FDE047, #C5B358)'
+                  : hoveredCard.item.accentColor,
+              }}
+            />
+            <div className="flex flex-col h-full w-full skew-x-6 p-4 justify-between">
+              {/* Top NBA-RSS Scoreboard Strip */}
+              <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="px-2 py-0.5 rounded text-[10px] font-mono font-extrabold uppercase tracking-wider text-missionNavy shrink-0"
+                    style={{ backgroundColor: hoveredCard.item.accentColor }}
+                  >
+                    {hoveredCard.item.sourceCode}
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-300 truncate">
+                    {hoveredCard.item.source}
+                  </span>
                 </div>
+                {hoveredCard.item.isKeyStory ? (
+                  <span className="px-2 py-0.5 rounded bg-vanguardGold text-missionNavy font-mono text-[9px] font-extrabold uppercase tracking-wider shrink-0 shadow-[0_0_12px_rgba(197,179,88,0.6)]">
+                    ★ KEY TODAY
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-mono text-vanguardGold shrink-0">
+                    {hoveredCard.item.time}
+                  </span>
+                )}
               </div>
-              
-              <div className="p-6 flex flex-col flex-grow relative z-20">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-[11px] text-vanguardGold font-mono tracking-wider">{hoveredCard.item.time}</span>
+
+              {/* Headline & Summary */}
+              <div className="my-auto py-1.5">
+                <h4 className="text-sm font-serif font-bold text-vanguardGold leading-snug line-clamp-2 mb-1">
+                  {hoveredCard.item.title}
+                </h4>
+                <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
+                  {hoveredCard.item.summary}
+                </p>
+              </div>
+
+              {/* Bottom 3-Column Box Score Strip */}
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/15 text-[10px] font-mono">
+                <div className="truncate">
+                  <span className="block text-[8px] uppercase text-slate-400">AGENCY</span>
+                  <span className="text-white font-semibold truncate">{hoveredCard.item.agency}</span>
                 </div>
-                <h4 className="text-xl font-serif font-semibold text-vanguardGold leading-relaxed mb-4 drop-shadow-lg tracking-wide">{hoveredCard.item.title}</h4>
-                
-                <div className="mt-auto space-y-3">
-                  <div className="flex justify-between items-center pb-2 border-b border-glassBorder/50">
-                    <span className="text-[11px] text-gray-400 uppercase tracking-widest">Agency</span>
-                    <span className="text-[13px] text-white font-medium truncate ml-2">{hoveredCard.item.agency}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-glassBorder/50">
-                    <span className="text-[11px] text-gray-400 uppercase tracking-widest">Est. Value</span>
-                    <span className="text-[13px] text-vanguardGold font-mono font-bold">{hoveredCard.item.value}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] text-gray-400 uppercase tracking-widest">Due Date</span>
-                    <span className="text-[13px] text-white font-mono">{hoveredCard.item.dueDate}</span>
-                  </div>
+                <div className="truncate">
+                  <span className="block text-[8px] uppercase text-slate-400">TRACK</span>
+                  <span className="text-vanguardGold font-bold truncate">{hoveredCard.item.track}</span>
+                </div>
+                <div className="text-right truncate">
+                  <span className="block text-[8px] uppercase text-slate-400">ACTION</span>
+                  <span className="text-emerald-400 font-bold">OPEN RSS ↗</span>
                 </div>
               </div>
             </div>
@@ -424,10 +503,14 @@ const ProcurementNews = () => {
       {/* Live News Border Header */}
       <div className="w-full relative z-20 px-10 flex items-end">
         <div className="flex items-end w-full">
-          <div className="flex items-center bg-gradient-to-br from-tacticalSlate/90 to-missionNavy/90 border-l border-t border-r border-vanguardGold/40 px-8 py-3 rounded-tl-xl rounded-tr-sm backdrop-blur-md relative z-10 translate-y-[1px] shadow-[0_-5px_15px_rgba(0,0,0,0.3)] -skew-x-6">
-            <div className="skew-x-6">
-              <span className="text-vanguardGold font-serif italic font-bold tracking-[0.3em] text-sm md:text-base uppercase drop-shadow-[0_0_15px_rgba(197,179,88,0.8)]">
+          <div className="flex items-center gap-4 bg-gradient-to-br from-tacticalSlate/90 to-missionNavy/90 border-l border-t border-r border-vanguardGold/40 px-7 py-2.5 rounded-tl-xl rounded-tr-sm backdrop-blur-md relative z-10 translate-y-[1px] shadow-[0_-5px_15px_rgba(0,0,0,0.3)] -skew-x-6">
+            <div className="skew-x-6 flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="text-vanguardGold font-serif italic font-bold tracking-[0.28em] text-sm md:text-base uppercase drop-shadow-[0_0_15px_rgba(197,179,88,0.8)]">
                 Live News
+              </span>
+              <span className="hidden sm:inline-block text-[10px] font-mono uppercase tracking-widest text-slate-300 border-l border-white/15 pl-3">
+                ★ Key Briefings Pinned Today
               </span>
             </div>
           </div>
@@ -441,61 +524,90 @@ const ProcurementNews = () => {
         className="flex overflow-hidden relative w-full z-10"
       >
         <div 
-          className="flex animate-scroll-left min-w-max px-10 pb-10 pt-0 gap-8"
-          style={{ animationDuration: '120s' }}
+          className="flex animate-scroll-left min-w-max px-10 pb-8 pt-4 gap-5"
+          style={{ animationDuration: '95s' }}
         >
           {[...newsItems, ...newsItems].map((item, i) => (
             <motion.div 
               key={`news-item-${i}`} 
               initial={isRefreshing ? { opacity: 0, scale: 0.95 } : false}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: i * 0.05 }}
+              transition={{ duration: 0.5, delay: (i % 10) * 0.04 }}
               onMouseEnter={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 setHoveredCard({ item, index: i, rect });
               }}
               style={{ opacity: hoveredCard?.index === i ? 0 : 1 }}
-              className="flex flex-col bg-gradient-to-br from-tacticalSlate/90 via-tacticalSlate/60 to-missionNavy/90 border-l border-t border-white/10 border-r border-b border-black/80 rounded-tl-3xl rounded-br-3xl rounded-tr-sm rounded-bl-sm overflow-hidden transition-all duration-[1500ms] ease-in-out group w-[320px] md:w-[380px] h-[480px] shrink-0 backdrop-blur-md -skew-x-6 relative shadow-[15px_0_20px_-5px_rgba(0,0,0,0.7)]"
+              className={`flex flex-col rounded-tl-2xl rounded-br-2xl rounded-tr-sm rounded-bl-sm overflow-hidden transition-all duration-500 ease-in-out group w-[275px] md:w-[305px] h-[195px] shrink-0 backdrop-blur-md -skew-x-6 relative ${
+                item.isKeyStory
+                  ? 'bg-gradient-to-br from-[#13203B]/95 via-missionNavy/95 to-[#1E1B10]/90 border border-vanguardGold/75 shadow-[0_10px_28px_rgba(197,179,88,0.18)]'
+                  : 'bg-gradient-to-br from-tacticalSlate/90 via-tacticalSlate/65 to-missionNavy/95 border-l border-t border-white/15 border-r border-b border-black/80 shadow-[10px_0_18px_-5px_rgba(0,0,0,0.65)]'
+              }`}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-              <div className="flex flex-col h-full w-full skew-x-6">
-                <div className="relative h-48 w-full overflow-hidden shrink-0 rounded-tl-3xl rounded-tr-sm">
-                  <div className="absolute inset-0 bg-missionNavy/40 transition-colors duration-[1500ms] z-10" />
-                  <img 
-                    src={item.image} 
-                    alt={item.title} 
-                    className="w-full h-full object-cover" 
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = item.fallbackImage;
-                    }}
-                  />
-                  <div className="absolute top-4 left-4 z-20 flex items-center space-x-2">
-                    <span className="text-[10px] font-bold uppercase text-missionNavy bg-vanguardGold px-2 py-1 rounded shadow-sm">{item.source}</span>
-                    <span className="text-[10px] font-bold uppercase text-white bg-red-600/90 backdrop-blur-sm px-2 py-1 rounded shadow-sm">{item.status}</span>
+              {/* Top NBA-Scoreboard Color Bar */}
+              <div
+                className="h-1 w-full shrink-0"
+                style={{
+                  background: item.isKeyStory
+                    ? 'linear-gradient(90deg, #C5B358, #FDE047, #C5B358)'
+                    : item.accentColor,
+                }}
+              />
+
+              <div className="flex flex-col h-full w-full skew-x-6 p-4 justify-between relative z-20">
+                {/* Row 1: Feed Ticker Tag & Pinned/Time Status */}
+                <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="px-1.5 py-0.5 rounded text-[9px] font-mono font-extrabold uppercase tracking-wider text-missionNavy shrink-0"
+                      style={{ backgroundColor: item.accentColor }}
+                    >
+                      {item.sourceCode}
+                    </span>
+                    <span className="text-[10px] font-mono text-gray-300 truncate">
+                      {item.source}
+                    </span>
                   </div>
+                  {item.isKeyStory ? (
+                    <span className="px-2 py-0.5 rounded bg-vanguardGold/20 border border-vanguardGold text-vanguardGold font-mono text-[9px] font-extrabold uppercase tracking-wider shrink-0">
+                      ★ KEY TODAY
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-mono text-vanguardGold/90 shrink-0">
+                      {item.time}
+                    </span>
+                  )}
                 </div>
-                
-                <div className="p-6 flex flex-col flex-grow relative z-20">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-[11px] text-vanguardGold font-mono tracking-wider">{item.time}</span>
+
+                {/* Row 2: Compact Story Headline & 1-Line Snippet */}
+                <div className="my-auto py-1">
+                  <h4
+                    className={`text-[14px] font-serif font-semibold leading-snug line-clamp-2 mb-1 transition-colors ${
+                      item.isKeyStory ? 'text-vanguardGold' : 'text-white group-hover:text-vanguardGold'
+                    }`}
+                  >
+                    {item.title}
+                  </h4>
+                  <p className="text-[10px] text-gray-400 line-clamp-1 font-mono">
+                    {item.summary}
+                  </p>
+                </div>
+
+                {/* Row 3: NBA-Ticker Style 3-Column Box Score Strip */}
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-glassBorder/40 text-[10px] font-mono">
+                  <div className="truncate">
+                    <span className="block text-[8px] uppercase text-gray-400 tracking-wider">AGENCY</span>
+                    <span className="text-gray-200 font-medium truncate">{item.agency}</span>
                   </div>
-                  <h4 className="text-xl font-serif font-semibold text-white leading-relaxed mb-4 group-hover:text-vanguardGold transition-colors duration-[1500ms] line-clamp-3 drop-shadow-lg tracking-wide">{item.title}</h4>
-                  
-                  <div className="mt-auto space-y-3">
-                    <div className="flex justify-between items-center pb-2 border-b border-glassBorder/30">
-                      <span className="text-[11px] text-gray-400 uppercase tracking-widest">Agency</span>
-                      <span className="text-[13px] text-gray-200 font-medium truncate ml-2">{item.agency}</span>
-                    </div>
-                    <div className="flex justify-between items-center pb-2 border-b border-glassBorder/30">
-                      <span className="text-[11px] text-gray-400 uppercase tracking-widest">Est. Value</span>
-                      <span className="text-[13px] text-vanguardGold font-mono font-bold">{item.value}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[11px] text-gray-400 uppercase tracking-widest">Due Date</span>
-                      <span className="text-[13px] text-gray-200 font-mono">{item.dueDate}</span>
-                    </div>
+                  <div className="truncate">
+                    <span className="block text-[8px] uppercase text-gray-400 tracking-wider">TRACK</span>
+                    <span className="text-vanguardGold font-bold truncate">{item.track}</span>
+                  </div>
+                  <div className="text-right truncate">
+                    <span className="block text-[8px] uppercase text-gray-400 tracking-wider">STATUS</span>
+                    <span className={item.isKeyStory ? 'text-vanguardGold font-bold' : 'text-gray-200'}>
+                      {item.isKeyStory ? 'PINNED' : item.status}
+                    </span>
                   </div>
                 </div>
               </div>
