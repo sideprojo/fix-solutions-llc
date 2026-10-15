@@ -761,8 +761,6 @@ export default function App() {
   const [isPortalModalOpen, setIsPortalModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  const [menuPosition, setMenuPosition] = useState<'top' | 'bottom'>('top');
-
   const [quoteForm, setQuoteForm] = useState({
     agency: '',
     email: '',
@@ -784,20 +782,10 @@ export default function App() {
 
   React.useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-      setIsDockOpen(false); // Auto-hide menu on scroll
-      
-      const newsSection = document.getElementById('procurement-news');
-      if (newsSection) {
-        const rect = newsSection.getBoundingClientRect();
-        // Menu is at top-6 (24px) + height (~50px) -> top 74px
-        // Cards start at rect.top + 104px
-        // Overlap when rect.top + 104 < 74 => rect.top < -30
-        if (rect.top < -20 && rect.bottom > 100) {
-          setMenuPosition('bottom');
-        } else {
-          setMenuPosition('top');
-        }
+      const scrolled = window.scrollY > 50;
+      setIsScrolled(scrolled);
+      if (scrolled) {
+        setIsDockOpen(false); // Auto-close radial menu on scroll
       }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -872,8 +860,8 @@ export default function App() {
           </div>
         </header>
 
-        {/* RADIAL TACTICAL DOCK */}
-        <div className={`fixed right-6 xl:right-[calc(50vw-40rem+1.5rem)] z-50 pointer-events-auto transition-all duration-700 ease-in-out ${menuPosition === 'bottom' ? 'top-[580px]' : 'top-6'}`}>
+        {/* RADIAL TACTICAL DOCK — Fixed Top-Right & Auto-Hides on Scroll */}
+        <div className={`fixed top-6 right-6 xl:right-[calc(50vw-40rem+1.5rem)] z-50 transition-all duration-500 ease-in-out ${isScrolled ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0 pointer-events-auto'}`}>
           <div className="relative flex items-center justify-end">
             <button 
               onClick={() => setIsDockOpen(!isDockOpen)}
