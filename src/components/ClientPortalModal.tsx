@@ -28,10 +28,8 @@ function mgcDigest(s: string): string {
 
 const DEFAULT_ADMIN_EMAIL = 'malik.khabir@miltongroupsecurity.org';
 const ADMIN_PASSKEY_ASSERTION = 'PASSKEY::SOVEREIGN_ADMIN';
-const ADMIN_VALID_DIGESTS = ['767c6f5c35afb599', '42c9c755a45ace6b'];
 const DEFAULT_CLIENT_EMAIL = 'service@sterlingautorepairva.com';
 const CLIENT_PASSKEY_ASSERTION = 'PASSKEY::VERIFIED_CLIENT';
-const CLIENT_VALID_DIGESTS = ['2e2fce3751cac96e', '2b405f3f8d7cebf2'];
 const VERIFIED_CLIENT_EMAILS = [
   'service@sterlingautorepairva.com',
   'client@miltongroupsecurity.org',
@@ -87,15 +85,13 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
       return;
     }
 
-    const passDigest = mgcDigest(trimmedPass);
-
-    if (normalizedEmail === DEFAULT_ADMIN_EMAIL && ADMIN_VALID_DIGESTS.includes(passDigest)) {
+    if (normalizedEmail === DEFAULT_ADMIN_EMAIL && trimmedPass === ADMIN_PASSKEY_ASSERTION) {
       setPortalRole('admin');
       setAuthStep('mfa');
       return;
     }
 
-    if (VERIFIED_CLIENT_EMAILS.includes(normalizedEmail) && CLIENT_VALID_DIGESTS.includes(passDigest)) {
+    if (VERIFIED_CLIENT_EMAILS.includes(normalizedEmail) && trimmedPass === CLIENT_PASSKEY_ASSERTION) {
       setPortalRole('client');
       setAuthStep('mfa');
       return;
