@@ -39,7 +39,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
     }
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('https://miltongroupsecurity.org/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -56,17 +56,17 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
         setAuthStep('mfa');
         return;
       }
-      setError((data && data.error) || 'Unrecognized credentials. Please verify your username/email and password or register at /portal.');
+      setError((data && data.error) || 'Unrecognized credentials. Please verify your username/email and password or register at miltongroupsecurity.org/portal.');
     } catch {
-      window.location.href = '/portal';
+      window.location.href = 'https://miltongroupsecurity.org/portal';
     }
   };
 
   const finalizePortalRedirect = () => {
     if (portalRole === 'admin') {
-      window.location.href = '/access-admin';
+      window.location.href = 'https://miltongroupsecurity.org/access-admin';
     } else {
-      window.location.href = '/workspace';
+      window.location.href = 'https://miltongroupsecurity.org/workspace';
     }
   };
 

@@ -1279,14 +1279,10 @@ export default function App() {
                 We implement OEM technologies and adhere to federal compliance standards, ensuring preparation, security, and readiness for operational challenges.
               </p>
               
-              <div className="grid grid-cols-2 gap-8 border-t border-glassBorder pt-8">
+              <div className="border-t border-glassBorder pt-8">
                 <div className="flex flex-col">
                   <span className="text-4xl md:text-5xl font-bold text-white mb-2">100%</span>
                   <span className="text-xs font-mono text-vanguardGold tracking-widest">MISSION FOCUS</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-4xl md:text-5xl font-bold text-white mb-2">Zero</span>
-                  <span className="text-xs font-mono text-vanguardGold tracking-widest">COMPLIANCE RISKS</span>
                 </div>
               </div>
             </motion.div>
@@ -1311,8 +1307,11 @@ export default function App() {
                 style={{ height: '100%', width: '100%', zIndex: 1, background: '#0B1426' }}
               >
                 <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; Esri'
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+                />
+                <TileLayer
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
                 />
                 <Marker position={[38.8951, -77.0364]} icon={tacticalIcon}>
                   <Popup className="tactical-popup">
