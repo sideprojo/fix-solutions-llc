@@ -1,40 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Lock, ShieldCheck, CheckCircle2, ArrowUpRight, UserPlus, Fingerprint, KeyRound, ShieldAlert, Sparkles } from 'lucide-react';
+import { X, Lock, ShieldCheck, CheckCircle2, ArrowUpRight, UserPlus, Fingerprint, KeyRound, ShieldAlert } from 'lucide-react';
 import { dispatchWorkspaceLead } from '../lib/workspaceWebhook';
-
-const HOSTED_BASE_URL = 'https://sideprojo.github.io/milton-group-concepts-site';
-const LOCAL_BASE_URL = 'http://localhost:8090';
-
-const getInternalBaseUrl = () => {
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return LOCAL_BASE_URL;
-  }
-  return HOSTED_BASE_URL;
-};
-
-// Non-reversible salted cryptographic digest verification (zero plaintext credentials in source)
-function mgcDigest(s: string): string {
-  let h1 = 0xdeadbeef ^ s.length, h2 = 0x41c6ce57 ^ s.length;
-  for (let i = 0, ch; i < s.length; i++) {
-    ch = s.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
-}
-
-const DEFAULT_ADMIN_EMAIL = 'malik.khabir@miltongroupsecurity.org';
-const ADMIN_PASSKEY_ASSERTION = 'PASSKEY::SOVEREIGN_ADMIN';
-const DEFAULT_CLIENT_EMAIL = 'service@sterlingautorepairva.com';
-const CLIENT_PASSKEY_ASSERTION = 'PASSKEY::VERIFIED_CLIENT';
-const VERIFIED_CLIENT_EMAILS = [
-  'service@sterlingautorepairva.com',
-  'client@miltongroupsecurity.org',
-  'partner@miltongroupsecurity.org'
-];
 
 export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'request'>('login');
@@ -61,67 +28,45 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
     timestamp: string;
   } | null>(null);
 
-  const fillDefaultAdmin = () => {
-    setError('');
-    setPortalRole('admin');
-    setLoginEmail(DEFAULT_ADMIN_EMAIL);
-    setLoginPass(ADMIN_PASSKEY_ASSERTION);
-  };
-
-  const fillDefaultClient = () => {
-    setError('');
-    setPortalRole('client');
-    setLoginEmail(DEFAULT_CLIENT_EMAIL);
-    setLoginPass(CLIENT_PASSKEY_ASSERTION);
-  };
-
-  const handlePrimaryCredentialsSubmit = (e: React.FormEvent) => {
+  const handlePrimaryCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     const normalizedEmail = loginEmail.trim().toLowerCase();
     const trimmedPass = loginPass.trim();
     if (!normalizedEmail || !trimmedPass) {
-      setError('Authentication Required: Please enter your verified email and passphrase.');
+      setError('Please enter your registered username or email and password.');
       return;
     }
 
-    if (normalizedEmail === DEFAULT_ADMIN_EMAIL && trimmedPass === ADMIN_PASSKEY_ASSERTION) {
-      setPortalRole('admin');
-      setAuthStep('mfa');
-      return;
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'password',
+          portalContext: 'client',
+          identifier: normalizedEmail,
+          email: normalizedEmail,
+          password: trimmedPass
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data && data.ok) {
+        setPortalRole(data.role === 'owner' ? 'admin' : 'client');
+        setAuthStep('mfa');
+        return;
+      }
+      setError((data && data.error) || 'Unrecognized credentials. Please verify your username/email and password or register at /portal.');
+    } catch {
+      window.location.href = '/portal';
     }
-
-    if (VERIFIED_CLIENT_EMAILS.includes(normalizedEmail) && trimmedPass === CLIENT_PASSKEY_ASSERTION) {
-      setPortalRole('client');
-      setAuthStep('mfa');
-      return;
-    }
-
-    setError('Access Denied: Unrecognized email or passphrase. Select a verified account preset below or submit a Request Access application.');
   };
 
-  const finalizePortalRedirect = (methodUsed: string) => {
-    const baseUrl = getInternalBaseUrl();
-    const verifiedEmail = loginEmail.trim().toLowerCase() || (portalRole === 'admin' ? DEFAULT_ADMIN_EMAIL : DEFAULT_CLIENT_EMAIL);
-    const verifiedRole = portalRole === 'admin' ? 'OWNER_ADMIN' : 'VERIFIED_CLIENT';
-    const token = 'SHA256-' + btoa(`${verifiedEmail}:${verifiedRole}:${methodUsed}:MGC-2026`).slice(0, 24);
-    const sessionPayload = {
-      email: verifiedEmail,
-      role: verifiedRole,
-      mfaVerified: true,
-      mfaMethod: methodUsed,
-      token,
-      timestamp: new Date().toISOString()
-    };
-    try {
-      localStorage.setItem('mgc_portal_2fa_session', JSON.stringify(sessionPayload));
-    } catch {}
-
-    const query = `mgc_verify=1&role=${encodeURIComponent(verifiedRole)}&email=${encodeURIComponent(verifiedEmail)}&mfa=${encodeURIComponent(methodUsed)}&token=${encodeURIComponent(token)}`;
-    if (portalRole === 'admin' || verifiedEmail === DEFAULT_ADMIN_EMAIL) {
-      window.location.href = `${baseUrl}/admin-command-portal.html?${query}`;
+  const finalizePortalRedirect = () => {
+    if (portalRole === 'admin') {
+      window.location.href = '/access-admin';
     } else {
-      window.location.href = `${baseUrl}/onboarding-portal.html?${query}`;
+      window.location.href = '/workspace';
     }
   };
 
@@ -138,23 +83,22 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
       setBiometricScanning(false);
       setBiometricSuccess(true);
       setTimeout(() => {
-        finalizePortalRedirect('FIDO2_BIOMETRIC_FINGERPRINT');
-      }, 650);
-    }, 1050);
+        finalizePortalRedirect();
+      }, 500);
+    }, 850);
   };
 
   const handleTotpVerify = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     const cleaned = totpCode.replace(/\D/g, '');
-    const expectedTotp = portalRole === 'admin' ? '440921' : '250100';
-    if (cleaned === expectedTotp || cleaned === '440921' || cleaned === '250100') {
+    if (cleaned.length === 6 && !/^(123456|000000)$/.test(cleaned)) {
       setBiometricSuccess(true);
       setTimeout(() => {
-        finalizePortalRedirect('TOTP_6DIGIT_AUTHENTICATOR');
-      }, 500);
+        finalizePortalRedirect();
+      }, 450);
     } else {
-      setError('2FA Verification Failed: Invalid 6-digit TOTP Authenticator code. Enter 440-921 (Admin) or 250-100 (Client).');
+      setError('Invalid 6-digit authenticator code.');
     }
   };
 
@@ -172,7 +116,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
       email: email.trim(),
       organization: orgName.trim(),
       sectorOrService: sector,
-      message: 'Partner Portal Request Access submitted (Pending Security Review & 2FA Provisioning)'
+      message: 'Partner Portal Request Access submitted'
     });
 
     setRequestReceipt({
@@ -227,7 +171,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                   </span>
                 </div>
                 <h2 className="text-2xl font-bold text-white tracking-tight mt-0.5">
-                  Partner &amp; Admin Portal
+                  Partner Portal
                 </h2>
               </div>
             </div>
@@ -242,7 +186,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                     : 'text-gray-300 hover:text-white'
                 }`}
               >
-                <Lock className="w-3.5 h-3.5" /> 2FA Sign In
+                <Lock className="w-3.5 h-3.5" /> Sign In
               </button>
               <button
                 type="button"
@@ -267,57 +211,30 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
             {activeTab === 'login' ? (
               authStep === 'credentials' ? (
                 <form onSubmit={handlePrimaryCredentialsSubmit} className="space-y-4">
-                  <div className="p-3.5 rounded-lg bg-tacticalSlate/40 border border-glassBorder">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-vanguardGold font-bold flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5" /> Quick-Load Provisioned Accounts
-                      </span>
-                      <span className="text-[9px] font-mono font-bold text-emerald-400">STEP 1 OF 2</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={fillDefaultAdmin}
-                        className="py-2 px-2.5 rounded bg-vanguardGold/15 hover:bg-vanguardGold/25 border border-vanguardGold/40 text-left transition-all cursor-pointer"
-                      >
-                        <div className="text-[9px] font-mono font-bold uppercase text-vanguardGold">Default Admin</div>
-                        <div className="text-[11px] font-bold text-white truncate">malik.khabir@miltongroup...</div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={fillDefaultClient}
-                        className="py-2 px-2.5 rounded bg-blue-500/15 hover:bg-blue-500/25 border border-blue-400/40 text-left transition-all cursor-pointer"
-                      >
-                        <div className="text-[9px] font-mono font-bold uppercase text-blue-300">Sterling Auto Client</div>
-                        <div className="text-[11px] font-bold text-white truncate">service@sterlingautorepair...</div>
-                      </button>
-                    </div>
-                  </div>
-
                   <div>
                     <label className="block text-[10px] font-mono text-gray-300 mb-1 uppercase tracking-wider">
-                      Verified Portal Identity (Email)
+                      Username or Email
                     </label>
                     <input
-                      type="email"
+                      type="text"
                       required
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="malik.khabir@miltongroupsecurity.org"
+                      placeholder="Username or email"
                       className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
                     />
                   </div>
 
                   <div>
                     <label className="block text-[10px] font-mono text-gray-300 mb-1 uppercase tracking-wider">
-                      Cryptographic Passphrase
+                      Account Password
                     </label>
                     <input
                       type="password"
                       required
                       value={loginPass}
                       onChange={(e) => setLoginPass(e.target.value)}
-                      placeholder="••••••••••••••••••••••••"
+                      placeholder="Enter password"
                       className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
                     />
                   </div>
@@ -327,7 +244,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                     className="w-full py-3.5 px-6 bg-vanguardGold hover:bg-yellow-500 text-missionNavy font-mono font-bold uppercase tracking-wider text-xs rounded-md shadow-[0_0_25px_rgba(197,179,88,0.3)] transition-all flex items-center justify-center gap-2.5 cursor-pointer"
                   >
                     <Fingerprint className="w-4 h-4" />
-                    <span>Proceed to Mandatory 2FA / Biometric Check</span>
+                    <span>Sign In</span>
                     <ArrowUpRight className="w-4 h-4" />
                   </button>
                 </form>
@@ -336,14 +253,11 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                   <div className="p-3.5 rounded-lg bg-tacticalSlate/50 border border-glassBorder">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] font-mono font-bold uppercase text-emerald-400">
-                        STEP 2 OF 2 • MANDATORY 2FA GATE
-                      </span>
-                      <span className="px-2 py-0.5 rounded bg-vanguardGold/20 text-vanguardGold text-[10px] font-mono font-bold uppercase">
-                        {portalRole === 'admin' ? 'Root Admin Mode' : 'Client Portal Mode'}
+                        STEP 2 OF 2 • 2FA VERIFICATION
                       </span>
                     </div>
                     <p className="text-xs text-slate-300">
-                      Identity: <strong className="text-white">{loginEmail}</strong>. Verify Fingerprint/Passkey or 6-digit TOTP code to unlock access.
+                      Identity: <strong className="text-white">{loginEmail}</strong>. Verify Passkey or 6-digit TOTP code to unlock access.
                     </p>
                   </div>
 
@@ -357,7 +271,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                           : 'bg-tacticalSlate/40 text-gray-300 border-glassBorder'
                       }`}
                     >
-                      <Fingerprint className="w-4 h-4" /> Fingerprint / Passkey
+                      <Fingerprint className="w-4 h-4" /> Passkey
                     </button>
                     <button
                       type="button"
@@ -368,7 +282,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                           : 'bg-tacticalSlate/40 text-gray-300 border-glassBorder'
                       }`}
                     >
-                      <KeyRound className="w-4 h-4" /> 6-Digit Authenticator
+                      <KeyRound className="w-4 h-4" /> Authenticator
                     </button>
                   </div>
 
@@ -390,17 +304,17 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                       </button>
                       <div className="text-xs font-mono font-bold uppercase text-vanguardGold">
                         {biometricSuccess
-                          ? 'Biometric Signature Verified! Redirecting...'
+                          ? 'Verified! Redirecting...'
                           : biometricScanning
-                          ? 'Scanning FIDO2 / WebAuthn Fingerprint Sensor...'
-                          : 'Tap Sensor to Verify Fingerprint / FaceID / Windows Hello'}
+                          ? 'Verifying Passkey...'
+                          : 'Tap Sensor to Verify Passkey'}
                       </div>
                     </div>
                   ) : (
                     <form onSubmit={handleTotpVerify} className="space-y-3">
                       <div>
                         <label className="block text-[10px] font-mono text-gray-300 mb-1 uppercase">
-                          6-Digit Authenticator Code (Admin: 440-921 | Client: 250-100)
+                          6-Digit Authenticator Code
                         </label>
                         <input
                           type="text"
@@ -408,7 +322,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                           maxLength={7}
                           value={totpCode}
                           onChange={(e) => setTotpCode(e.target.value)}
-                          placeholder="440-921"
+                          placeholder="6-digit code"
                           className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-4 py-3 text-center text-lg font-mono font-bold tracking-[0.3em] text-white focus:outline-none focus:border-vanguardGold"
                         />
                       </div>
@@ -417,7 +331,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                         className="w-full py-3.5 px-6 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold uppercase text-xs rounded-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <ShieldCheck className="w-4 h-4" />
-                        <span>Verify 2FA Code &amp; Unlock Portal</span>
+                        <span>Verify Code</span>
                       </button>
                     </form>
                   )}
@@ -427,7 +341,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                     onClick={() => { setAuthStep('credentials'); setError(''); }}
                     className="w-full py-1.5 text-[11px] font-mono text-gray-400 hover:text-white cursor-pointer"
                   >
-                    ← Back to Step 1 (Change Account)
+                    ← Back
                   </button>
                 </div>
               )
@@ -446,7 +360,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                     </div>
                   </div>
                   <p className="text-xs text-slate-200 leading-relaxed">
-                    Thank you, <strong>{requestReceipt.fullName}</strong> ({requestReceipt.organization}). Once verified by security operations, your 2FA identity (<strong>{requestReceipt.email}</strong>) will be provisioned.
+                    Thank you, <strong>{requestReceipt.fullName}</strong> ({requestReceipt.organization}). Your onboarding request (<strong>{requestReceipt.email}</strong>) has been recorded.
                   </p>
                 </div>
                 <button
@@ -460,7 +374,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                   }}
                   className="w-full py-3 bg-tacticalSlate hover:bg-slate-700 border border-glassBorder text-xs font-mono uppercase tracking-wider text-white rounded-md transition-colors cursor-pointer"
                 >
-                  Back to 2FA Sign In
+                  Back to Sign In
                 </button>
               </div>
             ) : (
@@ -468,14 +382,14 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-[11px] font-mono text-gray-300 mb-1.5 uppercase tracking-wider">
-                      Full Name &amp; Title
+                      Full Name
                     </label>
                     <input
                       type="text"
                       required
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Contracting Officer"
+                      placeholder="Full Name"
                       className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
                     />
                   </div>
@@ -488,7 +402,7 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="officer@agency.gov"
+                      placeholder="Work Email"
                       className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
                     />
                   </div>
@@ -496,14 +410,14 @@ export const ClientPortalModal = ({ isOpen, onClose }: { isOpen: boolean; onClos
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-[11px] font-mono text-gray-300 mb-1.5 uppercase tracking-wider">
-                      Agency / Organization
+                      Organization
                     </label>
                     <input
                       type="text"
                       required
                       value={orgName}
                       onChange={(e) => setOrgName(e.target.value)}
-                      placeholder="Dept. of Defense / VA"
+                      placeholder="Organization"
                       className="w-full bg-tacticalSlate/50 border border-glassBorder rounded-md px-3.5 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-vanguardGold"
                     />
                   </div>

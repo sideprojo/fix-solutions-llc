@@ -257,11 +257,11 @@ Address: [Insert Business Address]`;
                           </div>
                           <div>
                             <label className="block text-xs font-mono text-gray-400 uppercase mb-1">Contract Type / Vehicle</label>
-                            <input type="text" placeholder="e.g., SEWP, GSA, Open Market" className="w-full bg-missionNavy/50 border border-glassBorder rounded-lg px-3 py-2 text-white focus:outline-none focus:border-vanguardGold" />
+                            <input type="text" placeholder="Contract Vehicle" className="w-full bg-missionNavy/50 border border-glassBorder rounded-lg px-3 py-2 text-white focus:outline-none focus:border-vanguardGold" />
                           </div>
                           <div className="md:col-span-2">
                             <label className="block text-xs font-mono text-gray-400 uppercase mb-1">Estimated Duration / Timeline</label>
-                            <input type="text" placeholder="e.g., Q3 2026, 12-month base" className="w-full bg-missionNavy/50 border border-glassBorder rounded-lg px-3 py-2 text-white focus:outline-none focus:border-vanguardGold" />
+                            <input type="text" placeholder="Estimated Timeline" className="w-full bg-missionNavy/50 border border-glassBorder rounded-lg px-3 py-2 text-white focus:outline-none focus:border-vanguardGold" />
                           </div>
                           <div className="md:col-span-2">
                             <label className="block text-xs font-mono text-gray-400 uppercase mb-1">Brief Description of Requirements *</label>

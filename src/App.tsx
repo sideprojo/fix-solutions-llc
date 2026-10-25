@@ -1368,7 +1368,7 @@ export default function App() {
                     value={quoteForm.agency}
                     onChange={(e) => setQuoteForm({...quoteForm, agency: e.target.value})}
                     className="w-full bg-missionNavy/50 border border-glassBorder rounded-md px-4 py-3 text-white focus:outline-none focus:border-vanguardGold transition-colors" 
-                    placeholder="e.g. Dept of Defense" 
+                    placeholder="Organization or Agency" 
                   />
                 </div>
                 <div>
@@ -1379,7 +1379,7 @@ export default function App() {
                     value={quoteForm.email}
                     onChange={(e) => setQuoteForm({...quoteForm, email: e.target.value})}
                     className="w-full bg-missionNavy/50 border border-glassBorder rounded-md px-4 py-3 text-white focus:outline-none focus:border-vanguardGold transition-colors" 
-                    placeholder="official@agency.gov" 
+                    placeholder="Contact Email" 
                   />
                 </div>
               </div>
@@ -1391,7 +1391,7 @@ export default function App() {
                   value={quoteForm.naics}
                   onChange={(e) => setQuoteForm({...quoteForm, naics: e.target.value})}
                   className="w-full bg-missionNavy/50 border border-glassBorder rounded-md px-4 py-3 text-white focus:outline-none focus:border-vanguardGold transition-colors" 
-                  placeholder="e.g. 541519 or SEWP VI" 
+                  placeholder="Target NAICS or Vehicle" 
                 />
               </div>
 
